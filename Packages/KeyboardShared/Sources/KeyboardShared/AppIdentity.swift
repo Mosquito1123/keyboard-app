@@ -5,7 +5,7 @@ import Foundation
 public enum AppIdentity {
     public static let displayName = "键盘项目"
     public static let englishName = "KeyboardApp"
-    public static let skeletonVersion = "0.1.0"
+    public static let releaseVersion = "0.2.0"
 
     public static let appBundleIdentifier = "com.example.keyboardapp"
     public static let keyboardBundleIdentifier = "com.example.keyboardapp.keyboard"

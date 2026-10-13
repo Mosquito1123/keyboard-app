@@ -1,33 +1,33 @@
 import KeyboardShared
 import SwiftUI
+import UIKit
 
 struct OnboardingView: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.openURL) private var openURL
     @State private var draft = ""
+    @State private var isSampling = false
+    @State private var sampleNote = ""
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 header
-                tryCard
                 sectionHeader(L10n.App.enableHeading, en: L10n.App.enableHeadingEn)
                 VStack(spacing: 12) {
                     ForEach(L10n.App.steps) { step in
                         StepCard(step: step)
                     }
                 }
+                fullAccessCard
+                settingsEntry
+                tryCard
                 InfoCard(
-                    symbol: "lock.open",
-                    title: L10n.App.fullAccessTitle,
-                    titleEn: L10n.App.fullAccessTitleEn,
-                    body: L10n.App.fullAccessBody,
-                    bodyEn: L10n.App.fullAccessBodyEn
-                )
-                InfoCard(
-                    symbol: "mic.slash",
+                    symbol: "waveform.slash",
                     title: L10n.App.micTitle,
                     titleEn: L10n.App.micTitleEn,
-                    body: L10n.App.micBody,
-                    bodyEn: L10n.App.micBodyEn
+                    message: L10n.App.micBody,
+                    messageEn: L10n.App.micBodyEn
                 )
                 scopeCard
                 identityCard
@@ -38,6 +38,19 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity)
         }
         .background(Theme.canvas.color)
+        .navigationTitle(AppIdentity.displayName)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    SettingsView()
+                } label: {
+                    Text(L10n.App.settingsButton)
+                }
+            }
+        }
+        .toolbarBackground(Theme.canvas.color, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
     }
 
     private var header: some View {
@@ -55,7 +68,7 @@ struct OnboardingView: View {
                     Text(AppIdentity.englishName)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.muted.color)
-                    Text("\(L10n.App.versionPrefix) \(AppIdentity.skeletonVersion)")
+                    Text("\(L10n.App.versionPrefix) \(AppIdentity.releaseVersion)")
                         .font(.caption)
                         .foregroundStyle(Theme.muted.color)
                 }
@@ -79,6 +92,114 @@ struct OnboardingView: View {
         }
     }
 
+    private var fullAccessCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.App.fullAccessTitle)
+                        .font(.headline)
+                    Text(L10n.App.fullAccessTitleEn)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.muted.color)
+                }
+            } icon: {
+                Image(systemName: "lock.open")
+            }
+            .foregroundStyle(Theme.cream.color)
+
+            Text(L10n.App.fullAccessIntro)
+                .font(.subheadline)
+                .foregroundStyle(Theme.cream.color)
+            Text(L10n.App.fullAccessIntroEn)
+                .font(.footnote)
+                .foregroundStyle(Theme.muted.color)
+
+            compareColumn(L10n.App.willHeading, en: L10n.App.willHeadingEn, items: L10n.App.fullAccessWill, symbol: "checkmark")
+            compareColumn(L10n.App.wontHeading, en: L10n.App.wontHeadingEn, items: L10n.App.fullAccessWont, symbol: "xmark")
+
+            Button {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    openURL(url)
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.App.systemSettings)
+                        .font(.headline)
+                    Text(L10n.App.systemSettingsEn)
+                        .font(.footnote)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(Theme.quietKey.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Theme.cream.color)
+
+            Text(L10n.App.systemSettingsNote)
+                .font(.footnote)
+                .foregroundStyle(Theme.cream.color)
+            Text(L10n.App.systemSettingsNoteEn)
+                .font(.footnote)
+                .foregroundStyle(Theme.muted.color)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBackground)
+    }
+
+    private func compareColumn(_ title: String, en: String, items: [(String, String)], symbol: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.statusText.color)
+            Text(en)
+                .font(.caption)
+                .foregroundStyle(Theme.muted.color)
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: symbol)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Theme.statusText.color)
+                        .padding(.top, 3)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.0)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.cream.color)
+                        Text(item.1)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.muted.color)
+                    }
+                }
+            }
+        }
+    }
+
+    private var settingsEntry: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(L10n.App.openSettingsTitle, en: L10n.App.openSettingsTitleEn)
+            Text(L10n.App.openSettingsBody)
+                .font(.subheadline)
+                .foregroundStyle(Theme.cream.color)
+            Text(L10n.App.openSettingsBodyEn)
+                .font(.footnote)
+                .foregroundStyle(Theme.muted.color)
+            NavigationLink {
+                SettingsView()
+            } label: {
+                Text(L10n.App.settingsButton)
+                    .font(.headline)
+                    .foregroundStyle(Theme.onMic.color)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Theme.mic.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBackground)
+    }
+
     private var tryCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader(L10n.App.tryTitle, en: L10n.App.tryTitleEn)
@@ -98,9 +219,50 @@ struct OnboardingView: View {
                         .strokeBorder(Theme.hairline.color, lineWidth: 1)
                 }
                 .foregroundStyle(Theme.cream.color)
+
+            HStack(spacing: 8) {
+                sampleButton(L10n.App.insertSample, en: L10n.App.insertSampleEn, fill: Theme.mic.color, foreground: Theme.onMic.color) {
+                    await insertSample()
+                }
+                sampleButton(L10n.App.rewriteSample, en: L10n.App.rewriteSampleEn, fill: Theme.rewriteFill.color, foreground: Theme.onRewrite.color) {
+                    await rewriteDraft()
+                }
+            }
+            .disabled(isSampling)
+            .opacity(isSampling ? 0.55 : 1)
+
+            if !sampleNote.isEmpty {
+                Text(sampleNote)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.statusText.color)
+            }
         }
         .padding(16)
         .background(cardBackground)
+    }
+
+    private func sampleButton(
+        _ title: String,
+        en: String,
+        fill: Color,
+        foreground: Color,
+        action: @escaping () async -> Void
+    ) -> some View {
+        Button {
+            Task { await action() }
+        } label: {
+            VStack(spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                Text(en)
+                    .font(.caption2)
+            }
+            .foregroundStyle(foreground)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(fill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     private var scopeCard: some View {
@@ -117,7 +279,6 @@ struct OnboardingView: View {
                 Image(systemName: "shippingbox")
             }
             .foregroundStyle(Theme.cream.color)
-            .labelStyle(.titleAndIcon)
 
             ForEach(Array(L10n.App.scopeItems.enumerated()), id: \.offset) { _, item in
                 VStack(alignment: .leading, spacing: 2) {
@@ -163,6 +324,46 @@ struct OnboardingView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardBackground)
+    }
+
+    @MainActor
+    private func insertSample() async {
+        guard model.demoModeEnabled else {
+            sampleNote = "\(L10n.App.demoOffNote)\n\(L10n.App.demoOffNoteEn)"
+            return
+        }
+        isSampling = true
+        sampleNote = "\(L10n.App.sampling) \(L10n.App.samplingEn)"
+        defer { isSampling = false }
+        do {
+            let utterance = try await SpeechEngines.make(demoMode: true).transcribe(language: model.language)
+            draft = draft.isEmpty ? utterance.text : draft + utterance.text
+            sampleNote = ""
+        } catch is CancellationError {
+            sampleNote = ""
+        } catch {
+            sampleNote = "\(L10n.App.demoFailedNote) \(L10n.App.demoFailedNoteEn)"
+        }
+    }
+
+    @MainActor
+    private func rewriteDraft() async {
+        guard model.demoModeEnabled else {
+            sampleNote = "\(L10n.App.demoOffNote)\n\(L10n.App.demoOffNoteEn)"
+            return
+        }
+        isSampling = true
+        sampleNote = "\(L10n.App.sampling) \(L10n.App.samplingEn)"
+        defer { isSampling = false }
+        do {
+            let passage = try await RewriteEngines.make(demoMode: true).rewrite(draft, language: model.language)
+            draft = passage.text
+            sampleNote = ""
+        } catch is CancellationError {
+            sampleNote = ""
+        } catch {
+            sampleNote = "\(L10n.App.demoFailedNote) \(L10n.App.demoFailedNoteEn)"
+        }
     }
 
     private func sectionHeader(_ zh: String, en: String) -> some View {
@@ -240,8 +441,8 @@ private struct InfoCard: View {
     let symbol: String
     let title: String
     let titleEn: String
-    let body: String
-    let bodyEn: String
+    let message: String
+    let messageEn: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -257,10 +458,10 @@ private struct InfoCard: View {
                 Image(systemName: symbol)
             }
             .foregroundStyle(Theme.cream.color)
-            Text(body)
+            Text(message)
                 .font(.subheadline)
                 .foregroundStyle(Theme.cream.color)
-            Text(bodyEn)
+            Text(messageEn)
                 .font(.footnote)
                 .foregroundStyle(Theme.muted.color)
         }
@@ -278,6 +479,9 @@ private struct InfoCard: View {
 }
 
 #Preview {
-    OnboardingView()
-        .preferredColorScheme(.dark)
+    NavigationStack {
+        OnboardingView()
+    }
+    .environmentObject(AppModel(writesToSharedStore: false))
+    .preferredColorScheme(.dark)
 }

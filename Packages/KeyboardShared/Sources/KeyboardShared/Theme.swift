@@ -32,6 +32,10 @@ public enum Theme {
     public static let mic = RGBA(red: 0.769, green: 0.333, blue: 0.165)
     public static let micPressed = RGBA(red: 0.620, green: 0.255, blue: 0.118)
     public static let onMic = RGBA(red: 1.0, green: 0.973, blue: 0.953)
+    /// Muted sage, used only for the rewrite control so it is distinct from the mic key.
+    public static let rewriteFill = RGBA(red: 0.345, green: 0.455, blue: 0.384)
+    public static let rewritePressed = RGBA(red: 0.275, green: 0.365, blue: 0.310)
+    public static let onRewrite = RGBA(red: 0.957, green: 0.976, blue: 0.961)
     public static let muted = RGBA(red: 0.718, green: 0.667, blue: 0.612)
     public static let statusFill = RGBA(red: 0.165, green: 0.141, blue: 0.118)
     public static let statusText = RGBA(red: 0.953, green: 0.902, blue: 0.784)
