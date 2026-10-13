@@ -22,13 +22,13 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<!--
 	    RequestsOpenAccess is what makes Settings show Allow Full Access.
-	    This skeleton does not record audio. The usage string is reserved so a
-	    later microphone call does not crash for a missing purpose string.
-	    Apple does not publicly guarantee microphone access inside a keyboard
-	    extension even after Full Access is on.
+	    Demo mode inserts bundled sample text and does not record. The usage
+	    string is reserved so a later microphone call does not crash for a
+	    missing purpose string. Apple does not publicly guarantee microphone
+	    access inside a keyboard extension even after Full Access is on.
 	-->
 	<key>NSMicrophoneUsageDescription</key>
-	<string>键盘扩展预留麦克风权限，供以后的设备端语音输入使用。当前骨架不会录音，也不会上传音频。The keyboard reserves microphone permission for a future on-device voice input. This skeleton does not record or upload audio.</string>
+	<string>键盘扩展的演示模式只会插入本地示例文字，不会录音。此说明为以后的设备端语音预留。The keyboard demo inserts local sample text and does not record. This message is reserved for a future on-device voice feature.</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>
