@@ -23,7 +23,7 @@ struct OnboardingView: View {
                 settingsEntry
                 tryCard
                 InfoCard(
-                    symbol: "waveform.slash",
+                    symbol: "mic",
                     title: L10n.App.micTitle,
                     titleEn: L10n.App.micTitleEn,
                     message: L10n.App.micBody,
@@ -221,7 +221,12 @@ struct OnboardingView: View {
                 .foregroundStyle(Theme.cream.color)
 
             HStack(spacing: 8) {
-                sampleButton(L10n.App.insertSample, en: L10n.App.insertSampleEn, fill: Theme.mic.color, foreground: Theme.onMic.color) {
+                sampleButton(
+                    model.demoModeEnabled ? L10n.App.insertSample : L10n.App.dictateNow,
+                    en: model.demoModeEnabled ? L10n.App.insertSampleEn : L10n.App.dictateNowEn,
+                    fill: Theme.mic.color,
+                    foreground: Theme.onMic.color
+                ) {
                     await insertSample()
                 }
                 sampleButton(L10n.App.rewriteSample, en: L10n.App.rewriteSampleEn, fill: Theme.rewriteFill.color, foreground: Theme.onRewrite.color) {
@@ -328,41 +333,54 @@ struct OnboardingView: View {
 
     @MainActor
     private func insertSample() async {
-        guard model.demoModeEnabled else {
-            sampleNote = "\(L10n.App.demoOffNote)\n\(L10n.App.demoOffNoteEn)"
-            return
-        }
+        let demo = model.demoModeEnabled
         isSampling = true
-        sampleNote = "\(L10n.App.sampling) \(L10n.App.samplingEn)"
+        sampleNote = demo
+            ? "\(L10n.App.sampling)\n\(L10n.App.samplingEn)"
+            : "\(L10n.App.listening)\n\(L10n.App.listeningEn)"
         defer { isSampling = false }
         do {
-            let utterance = try await SpeechEngines.make(demoMode: true).transcribe(language: model.language)
-            draft = draft.isEmpty ? utterance.text : draft + utterance.text
+            let utterance = try await SpeechEngines.make(demoMode: demo).transcribe(language: model.language)
+            let text = utterance.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else {
+                sampleNote = "\(L10n.Keyboard.voiceEmptyTitle)\n\(L10n.Keyboard.voiceEmptyDetail)"
+                return
+            }
+            draft = draft.isEmpty ? text : draft + text
             sampleNote = ""
         } catch is CancellationError {
             sampleNote = ""
+        } catch let failure as SpeechFailure {
+            let copy = L10n.Keyboard.speechFailure(for: failure)
+            sampleNote = "\(copy.title)\n\(copy.detail)"
         } catch {
-            sampleNote = "\(L10n.App.demoFailedNote) \(L10n.App.demoFailedNoteEn)"
+            sampleNote = "\(L10n.App.demoFailedNote)\n\(L10n.App.demoFailedNoteEn)"
         }
     }
 
     @MainActor
     private func rewriteDraft() async {
-        guard model.demoModeEnabled else {
-            sampleNote = "\(L10n.App.demoOffNote)\n\(L10n.App.demoOffNoteEn)"
+        let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            sampleNote = "\(L10n.App.emptyRewrite)\n\(L10n.App.emptyRewriteEn)"
             return
         }
+        let demo = model.demoModeEnabled
         isSampling = true
-        sampleNote = "\(L10n.App.sampling) \(L10n.App.samplingEn)"
+        sampleNote = demo
+            ? "\(L10n.App.sampling)\n\(L10n.App.samplingEn)"
+            : "\(L10n.Keyboard.rewriteWorkingTitle)\n\(L10n.Keyboard.rewriteWorkingDetail)"
         defer { isSampling = false }
         do {
-            let passage = try await RewriteEngines.make(demoMode: true).rewrite(draft, language: model.language)
+            let passage = try await RewriteEngines.make(demoMode: demo).rewrite(draft, language: model.language)
             draft = passage.text
             sampleNote = ""
         } catch is CancellationError {
             sampleNote = ""
+        } catch is RewriteFailure {
+            sampleNote = "\(L10n.App.emptyRewrite)\n\(L10n.App.emptyRewriteEn)"
         } catch {
-            sampleNote = "\(L10n.App.demoFailedNote) \(L10n.App.demoFailedNoteEn)"
+            sampleNote = "\(L10n.App.demoFailedNote)\n\(L10n.App.demoFailedNoteEn)"
         }
     }
 

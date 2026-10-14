@@ -1,8 +1,8 @@
 import Foundation
 
-/// Languages this preview actually branches on.
-/// The list is intentionally short: it selects demo sentences and a few
-/// punctuation marks. It does not load a speech model.
+/// Languages the keyboard and the on-device recognizer branch on.
+/// The list is short on purpose. It selects punctuation, the demo sentence,
+/// and the `SFSpeechRecognizer` locale. It does not download a model pack.
 public enum TypingLanguage: String, CaseIterable, Sendable, Identifiable {
     case simplifiedChinese = "zh-Hans"
     case english = "en"
@@ -27,6 +27,18 @@ public enum TypingLanguage: String, CaseIterable, Sendable, Identifiable {
             return "。"
         case .english:
             return "."
+        }
+    }
+
+    /// Locale passed to `SFSpeechRecognizer`. Not the keyboard's `PrimaryLanguage` value.
+    public var speechLocaleIdentifier: String {
+        switch self {
+        case .simplifiedChinese:
+            return "zh-CN"
+        case .english:
+            return "en-US"
+        case .japanese:
+            return "ja-JP"
         }
     }
 
@@ -108,7 +120,9 @@ public enum PreferenceStore {
             ?? KeyboardPreferences.builtInFallback.language
         let demoModeEnabled: Bool
         if defaults.object(forKey: Key.demoMode) == nil {
-            demoModeEnabled = KeyboardPreferences.builtInFallback.demoModeEnabled
+            // A fresh install prefers on-device speech. Demo mode is the fallback toggle.
+            // When the keyboard cannot read this store it still uses `builtInFallback` (demo on).
+            demoModeEnabled = false
         } else {
             demoModeEnabled = defaults.bool(forKey: Key.demoMode)
         }

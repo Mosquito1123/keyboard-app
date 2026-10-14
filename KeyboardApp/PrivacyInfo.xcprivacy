@@ -2,6 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!--
+	    NSPrivacyTracking is false. There is no tracking domain and no analytics SDK.
+	    Collected data types stay empty: dictation audio is processed on device
+	    (SFSpeechRecognizer.requiresOnDeviceRecognition) and is not transmitted
+	    or stored by this app. Apple's definition of collection is data sent off device.
+	    UserDefaults reasons actually used:
+	    CA92.1 — values readable only inside this app (standard defaults fallback).
+	    1C8F.1 — the same preferences are shared with the keyboard through the App Group.
+	-->
 	<key>NSPrivacyTracking</key>
 	<false/>
 	<key>NSPrivacyCollectedDataTypes</key>
@@ -14,6 +23,7 @@
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>CA92.1</string>
+				<string>1C8F.1</string>
 			</array>
 		</dict>
 	</array>

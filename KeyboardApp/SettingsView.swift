@@ -1,8 +1,12 @@
 import KeyboardShared
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.openURL) private var openURL
+    @State private var availability = OnDeviceSpeechAccess.current(language: .simplifiedChinese)
+    @State private var requestingPermission = false
 
     var body: some View {
         ScrollView {
@@ -18,6 +22,7 @@ struct SettingsView: View {
 
                 languageCard
                 demoCard
+                permissionCard
                 bulletCard(
                     symbol: "lock.shield",
                     title: L10n.Settings.privacyHeading,
@@ -26,8 +31,8 @@ struct SettingsView: View {
                 )
                 bulletCard(
                     symbol: "wrench.and.screwdriver",
-                    title: L10n.Settings.stubHeading,
-                    titleEn: L10n.Settings.stubHeadingEn,
+                    title: L10n.Settings.limitsHeading,
+                    titleEn: L10n.Settings.limitsHeadingEn,
                     items: L10n.Settings.stubItems
                 )
             }
@@ -41,6 +46,9 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Theme.canvas.color, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
+        .task(id: model.language) {
+            availability = OnDeviceSpeechAccess.current(language: model.language)
+        }
     }
 
     private var languageCard: some View {
@@ -91,6 +99,102 @@ struct SettingsView: View {
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(selected ? Theme.mic.color.opacity(0.7) : Theme.hairline.color, lineWidth: 1)
+        }
+    }
+
+    private var permissionCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(L10n.Settings.permissionHeading, en: L10n.Settings.permissionHeadingEn)
+            Text(L10n.Settings.permissionIntro)
+                .font(.subheadline)
+                .foregroundStyle(Theme.cream.color)
+            Text(L10n.Settings.permissionIntroEn)
+                .font(.footnote)
+                .foregroundStyle(Theme.muted.color)
+
+            permissionRow(L10n.Settings.permissionSpeech, en: L10n.Settings.permissionSpeechEn, value: L10n.Settings.permissionState(availability.speech))
+            permissionRow(L10n.Settings.permissionMic, en: L10n.Settings.permissionMicEn, value: L10n.Settings.microphoneState(availability.microphone))
+            permissionRow(
+                L10n.Settings.permissionModel,
+                en: L10n.Settings.permissionModelEn,
+                value: L10n.Settings.modelState(supported: availability.onDeviceSupported),
+                extra: availability.localeIdentifier
+            )
+
+            Text(availability.canDictate ? L10n.Settings.permissionReady : L10n.Settings.permissionNotReady)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.statusText.color)
+            Text(availability.canDictate ? L10n.Settings.permissionReadyEn : L10n.Settings.permissionNotReadyEn)
+                .font(.footnote)
+                .foregroundStyle(Theme.muted.color)
+
+            Button {
+                requestingPermission = true
+                Task {
+                    availability = await OnDeviceSpeechAccess.request(language: model.language)
+                    requestingPermission = false
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.Settings.permissionRequest)
+                        .font(.headline)
+                    Text(L10n.Settings.permissionRequestEn)
+                        .font(.footnote)
+                }
+                .foregroundStyle(Theme.onMic.color)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(Theme.mic.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(requestingPermission)
+            .opacity(requestingPermission ? 0.55 : 1)
+
+            if availability.speech == .denied || availability.speech == .restricted || availability.microphone == .denied {
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        openURL(url)
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.Settings.permissionSettings)
+                            .font(.headline)
+                        Text(L10n.Settings.permissionSettingsEn)
+                            .font(.footnote)
+                    }
+                    .foregroundStyle(Theme.cream.color)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(Theme.quietKey.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBackground)
+    }
+
+    private func permissionRow(_ zh: String, en: String, value: (String, String), extra: String? = nil) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(zh)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.cream.color)
+                Text(en)
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted.color)
+            }
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(extra == nil ? value.0 : "\(value.0) · \(extra ?? "")")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.statusText.color)
+                    .multilineTextAlignment(.trailing)
+                Text(value.1)
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted.color)
+            }
         }
     }
 

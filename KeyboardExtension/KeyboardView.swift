@@ -61,18 +61,25 @@ final class KeyboardView: UIView {
         showVoice(
             title: L10n.Keyboard.voiceIdleTitle,
             detail: L10n.Keyboard.idleDetail(language: language, demoEnabled: demoEnabled, synced: synced),
-            busy: false
+            busy: false,
+            demoMic: !synced || demoEnabled
         )
     }
 
-    func showVoice(title: String, detail: String, busy: Bool) {
+    func showVoice(title: String, detail: String, busy: Bool, demoMic: Bool) {
         self.busy = busy
         voiceTitle.text = title
         voiceDetail.text = detail
+        voiceDetail.accessibilityLabel = detail
         var config = micButton.configuration
         config?.image = UIImage(systemName: busy ? "stop.fill" : "mic.fill")
         micButton.configuration = config
-        micButton.accessibilityLabel = busy ? L10n.Keyboard.voiceWorkingTitle : L10n.Keyboard.micHint
+        if busy {
+            micButton.accessibilityLabel = title
+        } else {
+            micButton.accessibilityLabel = demoMic ? L10n.Keyboard.micDemoHint : L10n.Keyboard.micHint
+        }
+        rewriteButton.accessibilityLabel = demoMic ? L10n.Keyboard.rewriteDemoHint : L10n.Keyboard.rewriteHint
         rewriteButton.isEnabled = !busy
         rewriteButton.alpha = busy ? 0.4 : 1
     }
@@ -102,7 +109,8 @@ final class KeyboardView: UIView {
         showVoice(
             title: L10n.Keyboard.voiceIdleTitle,
             detail: L10n.Keyboard.idleDetail(language: language, demoEnabled: true, synced: false),
-            busy: false
+            busy: false,
+            demoMic: true
         )
     }
 
@@ -131,7 +139,8 @@ final class KeyboardView: UIView {
 
         voiceDetail.font = .systemFont(ofSize: 11, weight: .regular)
         voiceDetail.textColor = Theme.statusText.uiColor
-        voiceDetail.numberOfLines = 2
+        voiceDetail.numberOfLines = 3
+        voiceDetail.accessibilityIdentifier = "keyboard.voiceDetail"
 
         let textColumn = UIStackView(arrangedSubviews: [voiceTitle, voiceDetail])
         textColumn.axis = .vertical
@@ -177,7 +186,7 @@ final class KeyboardView: UIView {
         micButton.heightAnchor.constraint(equalToConstant: 48).isActive = true
         rewriteButton.widthAnchor.constraint(equalToConstant: 64).isActive = true
         rewriteButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
-        voiceWell.heightAnchor.constraint(equalToConstant: 76).isActive = true
+        voiceWell.heightAnchor.constraint(equalToConstant: 92).isActive = true
 
         NSLayoutConstraint.activate([
             row.leadingAnchor.constraint(equalTo: voiceWell.leadingAnchor, constant: 8),
