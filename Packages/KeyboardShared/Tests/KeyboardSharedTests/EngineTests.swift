@@ -1,6 +1,23 @@
 import XCTest
 @testable import KeyboardShared
 
+private final class FinishFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var marked = false
+
+    var value: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return marked
+    }
+
+    func mark() {
+        lock.lock()
+        marked = true
+        lock.unlock()
+    }
+}
+
 final class EngineTests: XCTestCase {
     func testDemoSpeechInsertsLanguageSample() async throws {
         let engine = DemoSpeechRecognizer(delayNanoseconds: 1_000_000)
@@ -83,15 +100,105 @@ final class EngineTests: XCTestCase {
         let demo = SpeechEngines.make(demoMode: true, delayNanoseconds: 1_000_000)
         let utterance = try await demo.transcribe(language: .japanese)
         XCTAssertEqual(utterance.text, TypingLanguage.japanese.sampleUtterance)
+        XCTAssertTrue(utterance.usedDemoFixture)
 
-        let off = RewriteEngines.make(demoMode: false)
+        let rewrite = RewriteEngines.make(demoMode: false)
+        let passage = try await rewrite.rewrite("  hello   world ", language: .english)
+        XCTAssertEqual(passage.engineName, "on-device-tidy")
+        XCTAssertFalse(passage.usedDemoFixture)
+        XCTAssertEqual(passage.text, "Hello world.")
+        XCTAssertFalse(passage.text.contains("demo"))
+
+        #if os(iOS)
+        XCTAssertEqual(SpeechEngines.make(demoMode: false).engineName, "apple-speech-on-device")
+        #else
+        let speech = SpeechEngines.make(demoMode: false)
+        XCTAssertEqual(speech.engineName, "unwired")
+        #endif
+    }
+
+    func testOnDeviceRewriteTidiesWithoutInventingCopy() async throws {
+        let engine = OnDeviceTextRewriter()
+        let english = try await engine.rewrite("then i went", language: .english)
+        XCTAssertEqual(english.text, "Then I went.")
+        XCTAssertFalse(english.usedDemoFixture)
+
+        let sentences = try await engine.rewrite("hello world. next sentence", language: .english)
+        XCTAssertEqual(sentences.text, "Hello world. Next sentence.")
+        let excited = try await engine.rewrite("wow!", language: .english)
+        XCTAssertEqual(excited.text, "Wow!")
+
+        let branded = try await engine.rewrite("iOS 17 is ready", language: .english)
+        XCTAssertEqual(branded.text, "iOS 17 is ready.")
+
+        let chinese = try await engine.rewrite("  周五前  把提纲发给我  ", language: .simplifiedChinese)
+        XCTAssertEqual(chinese.text, "周五前把提纲发给我。")
+        XCTAssertFalse(chinese.text.contains("演示"))
+
+        let japanese = try await engine.rewrite(" 金曜  までに ", language: .japanese)
+        XCTAssertEqual(japanese.text, "金曜までに。")
+
+        let punctuated = try await engine.rewrite("已经有句号。", language: .simplifiedChinese)
+        XCTAssertEqual(punctuated.text, "已经有句号。")
+
         do {
-            _ = try await off.rewrite("x", language: .english)
-            XCTFail("Expected notImplemented")
-        } catch is LanguageModelStubError {
+            _ = try await engine.rewrite(" \n\t ", language: .english)
+            XCTFail("Expected emptySource")
+        } catch RewriteFailure.emptySource {
         } catch {
             XCTFail("Unexpected error \(error)")
         }
+    }
+
+    func testFreshPreferencesPreferOnDeviceSpeech() {
+        let suite = "group.test.keyboardapp.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let loaded = PreferenceStore.load(from: defaults)
+        XCTAssertEqual(loaded.language, .simplifiedChinese)
+        XCTAssertFalse(loaded.demoModeEnabled)
+        XCTAssertTrue(KeyboardPreferences.builtInFallback.demoModeEnabled)
+        defaults.removePersistentDomain(forName: suite)
+    }
+
+    func testSpeechLocalesAndFailureCopy() {
+        XCTAssertEqual(TypingLanguage.simplifiedChinese.speechLocaleIdentifier, "zh-CN")
+        XCTAssertEqual(TypingLanguage.english.speechLocaleIdentifier, "en-US")
+        XCTAssertEqual(TypingLanguage.japanese.speechLocaleIdentifier, "ja-JP")
+
+        let denied = L10n.Keyboard.speechFailure(for: .speechDenied)
+        XCTAssertFalse(denied.detail.isEmpty)
+        let audio = L10n.Keyboard.speechFailure(for: .audioSessionFailed(code: 561015905))
+        XCTAssertTrue(audio.detail.contains("561015905"))
+        let silent = L10n.Keyboard.speechFailure(for: .noSpeech)
+        XCTAssertEqual(silent.title, L10n.Keyboard.voiceEmptyTitle)
+    }
+
+    func testDictationFinishIsSticky() {
+        let control = DictationControl()
+        XCTAssertFalse(control.isFinishRequested)
+        control.requestFinish()
+        XCTAssertTrue(control.isFinishRequested)
+        let finished = FinishFlag()
+        control.onFinish { finished.mark() }
+        XCTAssertTrue(finished.value)
+    }
+
+    func testSpeechAccessAndProductPolicy() {
+        XCTAssertFalse(ProductPolicy.trackingEnabled)
+        XCTAssertFalse(ProductPolicy.purchasesEnabled)
+        XCTAssertFalse(ProductPolicy.advertisingEnabled)
+        XCTAssertFalse(ProductPolicy.serverSpeechFallbackEnabled)
+        XCTAssertFalse(ProductPolicy.bundlesWhisperKit)
+        XCTAssertFalse(ProductPolicy.bundlesLlamaRuntime)
+        #if !os(iOS)
+        let snapshot = OnDeviceSpeechAccess.current(language: .english)
+        XCTAssertEqual(snapshot.speech, .unavailable)
+        XCTAssertEqual(snapshot.microphone, .unavailable)
+        XCTAssertNil(snapshot.onDeviceSupported)
+        XCTAssertEqual(snapshot.localeIdentifier, "en-US")
+        XCTAssertFalse(snapshot.canDictate)
+        #endif
     }
 
     func testPreferenceRoundTrip() {
@@ -100,7 +207,8 @@ final class EngineTests: XCTestCase {
         defaults.removePersistentDomain(forName: suite)
 
         let loadedDefault = PreferenceStore.load(from: defaults)
-        XCTAssertEqual(loadedDefault, .builtInFallback)
+        XCTAssertEqual(loadedDefault.language, KeyboardPreferences.builtInFallback.language)
+        XCTAssertFalse(loadedDefault.demoModeEnabled)
 
         let saved = KeyboardPreferences(language: .japanese, demoModeEnabled: false)
         PreferenceStore.save(saved, to: defaults)

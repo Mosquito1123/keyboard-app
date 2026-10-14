@@ -1,8 +1,25 @@
 import Foundation
 
 public enum SpeechStubError: Error, Equatable, Sendable {
-    /// No recognizer, audio engine, or microphone session exists in this build.
+    /// Legacy entry point. The keyboard does not call this.
+    /// Live dictation goes through `SpeechEngines` and, on iOS, `SFSpeechRecognizer`.
     case notImplemented
+}
+
+public enum SpeechFailure: Error, Equatable, Sendable {
+    case notImplemented
+    /// The system prompt did not complete. Ask again from the containing app.
+    case speechNotDetermined
+    case speechDenied
+    case speechRestricted
+    case microphoneDenied
+    /// This locale cannot recognize on device. Server recognition is intentionally not used.
+    case onDeviceUnavailable
+    case recognizerUnavailable
+    /// `code` is an `AVAudioSession` error, or 0 when the input format was unusable.
+    case audioSessionFailed(code: Int)
+    case noSpeech
+    case interrupted
 }
 
 public struct RecognizedUtterance: Sendable, Equatable {
@@ -57,14 +74,23 @@ public struct UnwiredSpeechRecognizer: SpeechRecognizing {
 }
 
 public enum SpeechEngines {
-    /// Demo fixtures are the only engine linked today.
-    /// A future on-device recognizer can be returned from here behind an explicit opt-in.
+    /// Demo mode returns the bundled sample and does not open the microphone.
+    /// Otherwise iOS uses `SFSpeechRecognizer` with on-device recognition required.
     /// This package does not depend on WhisperKit or any other model runtime.
-    public static func make(demoMode: Bool, delayNanoseconds: UInt64 = 700_000_000) -> any SpeechRecognizing {
+    public static func make(
+        demoMode: Bool,
+        delayNanoseconds: UInt64 = 700_000_000,
+        control: DictationControl = DictationControl()
+    ) -> any SpeechRecognizing {
         if demoMode {
             return DemoSpeechRecognizer(delayNanoseconds: delayNanoseconds)
         }
+        #if os(iOS)
+        return AppleOnDeviceSpeechRecognizer(control: control)
+        #else
+        _ = control
         return UnwiredSpeechRecognizer()
+        #endif
     }
 }
 

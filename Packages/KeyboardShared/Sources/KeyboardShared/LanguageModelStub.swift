@@ -54,23 +54,22 @@ public struct UnwiredTextRewriter: TextRewriting {
 }
 
 public enum RewriteEngines {
-    /// Demo fixtures are the only rewriter linked today.
+    /// Demo mode returns a labeled sample. Otherwise the local tidy-up runs.
     /// This package does not depend on llama.cpp or any other model runtime.
     public static func make(demoMode: Bool, delayNanoseconds: UInt64 = 650_000_000) -> any TextRewriting {
         if demoMode {
             return DemoTextRewriter(delayNanoseconds: delayNanoseconds)
         }
-        return UnwiredTextRewriter()
+        return OnDeviceTextRewriter()
     }
 }
 
-/// Placeholder for a future on-device language model.
-/// `complete` does not allocate a model and does not contact a server.
-/// Demo rewriting goes through `RewriteEngines`, not this method.
+/// Kept so `complete(prompt:)` still means "no language-model runtime".
+/// Rewriting goes through `RewriteEngines`, not this method.
 public struct LanguageModelStub: Sendable {
     public init() {}
 
-    public static let scopeNote = "No on-device model runtime is linked. Demo rewrite uses RewriteEngines."
+    public static let scopeNote = "No llama or Whisper runtime is linked. Rewrite uses OnDeviceTextRewriter. Speech uses Apple on-device recognition when demo mode is off."
 
     public func complete(prompt: String) async throws -> String {
         _ = prompt

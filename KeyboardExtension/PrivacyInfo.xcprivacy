@@ -2,6 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!--
+	    Same posture as the containing app: no tracking and no collected data types.
+	    The extension reads App Group preferences and, when Full Access and demo-off
+	    allow it, runs on-device speech recognition. It does not transmit audio or text.
+	    CA92.1 covers defaults that stay inside the extension.
+	    1C8F.1 covers the App Group suite shared with the containing app.
+	-->
 	<key>NSPrivacyTracking</key>
 	<false/>
 	<key>NSPrivacyCollectedDataTypes</key>
@@ -14,6 +21,7 @@
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>CA92.1</string>
+				<string>1C8F.1</string>
 			</array>
 		</dict>
 	</array>
