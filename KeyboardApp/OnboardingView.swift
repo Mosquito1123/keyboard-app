@@ -22,6 +22,7 @@ struct OnboardingView: View {
                 fullAccessCard
                 settingsEntry
                 tryCard
+                playgroundEntry
                 InfoCard(
                     symbol: "mic",
                     title: L10n.App.micTitle,
@@ -246,6 +247,36 @@ struct OnboardingView: View {
         .background(cardBackground)
     }
 
+    private var playgroundEntry: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(L10n.Playground.title, en: L10n.Playground.titleEn)
+            Text(L10n.Playground.intro)
+                .font(.subheadline)
+                .foregroundStyle(Theme.cream.color)
+            Text(L10n.Playground.privacy)
+                .font(.footnote)
+                .foregroundStyle(Theme.statusText.color)
+            NavigationLink {
+                PlaygroundView()
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.Playground.open)
+                        .font(.headline)
+                    Text(L10n.Playground.openEn)
+                        .font(.footnote)
+                }
+                .foregroundStyle(Theme.onRewrite.color)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(Theme.rewriteFill.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBackground)
+    }
+
     private func sampleButton(
         _ title: String,
         en: String,
@@ -315,9 +346,14 @@ struct OnboardingView: View {
                     .foregroundStyle(Theme.muted.color)
             }
             identityRow(L10n.App.runningAs, en: L10n.App.runningAsEn, value: Bundle.main.bundleIdentifier ?? "—")
-            identityRow("主 App 占位", en: "App placeholder", value: AppIdentity.appBundleIdentifier)
-            identityRow("键盘扩展占位", en: "Keyboard placeholder", value: AppIdentity.keyboardBundleIdentifier)
+            identityRow("主 App", en: "Containing app", value: AppIdentity.appBundleIdentifier)
+            identityRow("键盘扩展", en: "Keyboard extension", value: AppIdentity.keyboardBundleIdentifier)
             identityRow("App Group", en: "App Group", value: AppIdentity.appGroupIdentifier)
+            identityRow(
+                "当前是否共享设置",
+                en: "Settings sharing now",
+                value: SharedStore.usesAppGroup ? "App Group" : "in-process"
+            )
             identityRow("保留的 URL Scheme", en: "Reserved URL scheme", value: "\(AppIdentity.urlScheme)://")
             Text(L10n.App.idFootnote)
                 .font(.footnote)
@@ -365,14 +401,11 @@ struct OnboardingView: View {
             sampleNote = "\(L10n.App.emptyRewrite)\n\(L10n.App.emptyRewriteEn)"
             return
         }
-        let demo = model.demoModeEnabled
         isSampling = true
-        sampleNote = demo
-            ? "\(L10n.App.sampling)\n\(L10n.App.samplingEn)"
-            : "\(L10n.Keyboard.rewriteWorkingTitle)\n\(L10n.Keyboard.rewriteWorkingDetail)"
+        sampleNote = "\(L10n.Keyboard.rewriteWorkingTitle(.polish))\n\(L10n.Keyboard.rewriteWorkingDetail)"
         defer { isSampling = false }
         do {
-            let passage = try await RewriteEngines.make(demoMode: demo).rewrite(draft, language: model.language)
+            let passage = try await AppleIntelligenceRewrite.rewrite(draft, language: model.language, tone: .polish)
             draft = passage.text
             sampleNote = ""
         } catch is CancellationError {

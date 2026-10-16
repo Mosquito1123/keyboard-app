@@ -8,6 +8,7 @@ final class KeyboardViewController: UIInputViewController, UIInputViewAudioFeedb
     private var workGeneration = 0
     private var dictationControl: DictationControl?
     private var finishingDictation = false
+    private var lastDictatedText: String?
 
     var enableInputClicksWhenVisible: Bool { true }
 
@@ -51,14 +52,15 @@ final class KeyboardViewController: UIInputViewController, UIInputViewAudioFeedb
     }
 
     private var preferredHeight: CGFloat {
-        traitCollection.userInterfaceIdiom == .pad ? 388 : 332
+        traitCollection.userInterfaceIdiom == .pad ? 392 : 340
     }
 
-    private func preferencesForKeyboard() -> (prefs: KeyboardPreferences, synced: Bool) {
+    private func preferencesForKeyboard() -> (prefs: KeyboardPreferences, synced: Bool, shared: Bool) {
+        let shared = SharedStore.usesAppGroup
         if hasFullAccess {
-            return (PreferenceStore.load(), true)
+            return (PreferenceStore.load(), true, shared)
         }
-        return (.builtInFallback, false)
+        return (.builtInFallback, false, shared)
     }
 
     private func refreshChrome() {
@@ -67,7 +69,8 @@ final class KeyboardViewController: UIInputViewController, UIInputViewAudioFeedb
         keyboardView.applyChrome(
             language: snapshot.prefs.language,
             demoEnabled: snapshot.prefs.demoModeEnabled,
-            synced: snapshot.synced
+            synced: snapshot.synced,
+            shared: snapshot.shared
         )
     }
 
@@ -88,7 +91,7 @@ final class KeyboardViewController: UIInputViewController, UIInputViewAudioFeedb
         )
     }
 
-    private func usesDemo(_ snapshot: (prefs: KeyboardPreferences, synced: Bool)) -> Bool {
+    private func usesDemo(_ snapshot: (prefs: KeyboardPreferences, synced: Bool, shared: Bool)) -> Bool {
         !snapshot.synced || snapshot.prefs.demoModeEnabled
     }
 
@@ -114,6 +117,7 @@ final class KeyboardViewController: UIInputViewController, UIInputViewAudioFeedb
             guard let self else { return }
             UIDevice.current.playInputClick()
             self.textDocumentProxy.insertText(utterance.text)
+            self.lastDictatedText = utterance.text
             self.keyboardView.showVoice(
                 title: L10n.Keyboard.voiceDoneDemoTitle,
                 detail: utterance.text,
@@ -171,6 +175,7 @@ final class KeyboardViewController: UIInputViewController, UIInputViewAudioFeedb
                 guard utterance.usedDemoFixture == false else { return }
                 UIDevice.current.playInputClick()
                 self.textDocumentProxy.insertText(utterance.text)
+                self.lastDictatedText = utterance.text
                 self.keyboardView.showVoice(
                     title: L10n.Keyboard.voiceDoneTitle,
                     detail: utterance.text,
@@ -215,40 +220,74 @@ final class KeyboardViewController: UIInputViewController, UIInputViewAudioFeedb
         return nil
     }
 
-    private func startRewrite() {
+    private func startRewrite(tone: RewriteTone) {
         let snapshot = preferencesForKeyboard()
-        let demo = usesDemo(snapshot)
-        let context = textDocumentProxy.documentContextBeforeInput ?? ""
-        let snippet = String(context.suffix(120))
-        let trimmed = snippet.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
+        let demoMic = usesDemo(snapshot)
+        guard let target = rewriteTarget() else {
             keyboardView.showVoice(
                 title: L10n.Keyboard.rewriteEmptyTitle,
                 detail: L10n.Keyboard.rewriteEmptyDetail,
                 busy: false,
-                demoMic: demo
+                demoMic: demoMic
             )
             return
         }
         keyboardView.showVoice(
-            title: L10n.Keyboard.rewriteWorkingTitle,
-            detail: demo ? L10n.Keyboard.rewriteDemoWorkingDetail : L10n.Keyboard.rewriteWorkingDetail,
+            title: L10n.Keyboard.rewriteWorkingTitle(tone),
+            detail: L10n.Keyboard.rewriteWorkingDetail,
             busy: true,
-            demoMic: demo
+            demoMic: demoMic
         )
         let language = snapshot.prefs.language
-        let engine = RewriteEngines.make(demoMode: demo)
-        runWork(demoMic: demo, failureDetail: L10n.Keyboard.rewriteFailedDetail) { @MainActor [weak self] in
-            let passage = try await engine.rewrite(snippet, language: language)
+        let source = target.source
+        let engine = RewriteEngines.make(demoMode: false)
+        runWork(demoMic: demoMic, failureDetail: L10n.Keyboard.rewriteFailedDetail) { @MainActor [weak self] in
+            let passage = try await engine.rewrite(source, language: language, tone: tone)
             guard let self else { return }
-            self.replaceBeforeCursor(snippet, with: passage.text)
+            self.applyRewrite(target, replacement: passage.text)
             self.keyboardView.showVoice(
-                title: passage.usedDemoFixture ? L10n.Keyboard.rewriteDoneDemoTitle : L10n.Keyboard.rewriteDoneTitle,
+                title: L10n.Keyboard.rewriteDoneTitle(tone),
                 detail: passage.text,
                 busy: false,
-                demoMic: demo
+                demoMic: demoMic
             )
         }
+    }
+
+    /// Selected text wins. Otherwise the last dictation is used when it is still
+    /// sitting before the cursor. The last resort is a short suffix before the cursor.
+    private func rewriteTarget() -> RewriteTarget? {
+        if let selected = textDocumentProxy.selectedText {
+            let trimmed = selected.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty, trimmed.count <= 500 {
+                return RewriteTarget(source: trimmed, kind: .selection)
+            }
+        }
+        let before = textDocumentProxy.documentContextBeforeInput ?? ""
+        if let last = lastDictatedText {
+            let trimmed = last.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty, before.hasSuffix(last) {
+                return RewriteTarget(source: last, kind: .beforeCursor(last))
+            }
+            if !trimmed.isEmpty, before.hasSuffix(trimmed) {
+                return RewriteTarget(source: trimmed, kind: .beforeCursor(trimmed))
+            }
+        }
+        let snippet = String(before.suffix(160))
+        let trimmed = snippet.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return RewriteTarget(source: snippet, kind: .beforeCursor(snippet))
+    }
+
+    private func applyRewrite(_ target: RewriteTarget, replacement: String) {
+        switch target.kind {
+        case .selection:
+            UIDevice.current.playInputClick()
+            textDocumentProxy.insertText(replacement)
+        case .beforeCursor(let snippet):
+            replaceBeforeCursor(snippet, with: replacement)
+        }
+        lastDictatedText = replacement
     }
 
     private func beginGeneration() -> Int {
@@ -306,6 +345,16 @@ final class KeyboardViewController: UIInputViewController, UIInputViewAudioFeedb
     }
 }
 
+private struct RewriteTarget {
+    enum Kind {
+        case selection
+        case beforeCursor(String)
+    }
+
+    var source: String
+    var kind: Kind
+}
+
 extension KeyboardViewController: KeyboardViewDelegate {
     func keyboardView(_ keyboardView: KeyboardView, didPerform action: KeyboardAction) {
         switch action {
@@ -332,9 +381,9 @@ extension KeyboardViewController: KeyboardViewDelegate {
             } else {
                 startDictation()
             }
-        case .rewrite:
+        case .rewrite(let tone):
             guard workTask == nil else { return }
-            startRewrite()
+            startRewrite(tone: tone)
         }
     }
 }

@@ -18,6 +18,12 @@ struct SettingsView: View {
                     Text(L10n.Settings.introEn)
                         .font(.footnote)
                         .foregroundStyle(Theme.muted.color)
+                    Text(SharedStore.usesAppGroup ? L10n.Settings.groupOn : L10n.Settings.groupOff)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.statusText.color)
+                    Text(SharedStore.usesAppGroup ? L10n.Settings.groupOnEn : L10n.Settings.groupOffEn)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.muted.color)
                 }
 
                 languageCard
@@ -230,6 +236,21 @@ struct SettingsView: View {
             Text(L10n.Settings.syncNoteEn)
                 .font(.footnote)
                 .foregroundStyle(Theme.muted.color)
+            NavigationLink {
+                PlaygroundView()
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.Playground.open)
+                        .font(.headline)
+                    Text(L10n.Playground.openEn)
+                        .font(.footnote)
+                }
+                .foregroundStyle(Theme.onRewrite.color)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(Theme.rewriteFill.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
