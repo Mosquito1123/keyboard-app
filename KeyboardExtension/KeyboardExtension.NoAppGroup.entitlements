@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	    Default signing file for a free Personal Team.
+	    RequestsOpenAccess stays in Info.plist, not here.
+	    Pair this with KeyboardApp.NoAppGroup.entitlements.
+	    Switch both targets to the App Group entitlements only after the
+	    group group.com.mosquito1123.keyboardapp can be provisioned.
+	-->
+</dict>
+</plist>

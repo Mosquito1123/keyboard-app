@@ -1,18 +1,22 @@
 import Foundation
 
-/// Placeholder identifiers. Change these together with the Xcode build settings
-/// and the App Group entitlement before you ship.
+/// Identifiers this project signs with. They match `project.yml`, the Xcode
+/// build settings, and the App Group entitlement files.
 public enum AppIdentity {
     public static let displayName = "键盘项目"
     public static let englishName = "KeyboardApp"
-    public static let releaseVersion = "0.3.0"
+    public static let releaseVersion = "0.4.0"
 
-    public static let appBundleIdentifier = "com.example.keyboardapp"
-    public static let keyboardBundleIdentifier = "com.example.keyboardapp.keyboard"
-    public static let appGroupIdentifier = "group.com.example.keyboardapp"
+    public static let appBundleIdentifier = "com.mosquito1123.keyboardapp"
+    public static let keyboardBundleIdentifier = "com.mosquito1123.keyboardapp.keyboard"
+    public static let appGroupIdentifier = "group.com.mosquito1123.keyboardapp"
 
     /// Reserved. The app does not open this URL. Dictation stays inside the current process.
     public static let urlScheme = "keyboardapp"
+
+    /// Info.plist key expanded from the `KEYBOARD_APP_GROUP_ENABLED` build setting.
+    /// `NO` forces in-process preferences so a free Personal Team can still run.
+    public static let appGroupEnabledInfoKey = "KeyboardAppGroupEnabled"
 }
 
 /// Shipping policy. These stay false: there is no analytics SDK, no StoreKit product, and no ad SDK.

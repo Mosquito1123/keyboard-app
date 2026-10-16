@@ -26,6 +26,8 @@
 	    and the user taps the mic. Recognition is on-device. Apple still does
 	    not guarantee that a keyboard extension can open the microphone.
 	-->
+	<key>KeyboardAppGroupEnabled</key>
+	<string>$(KEYBOARD_APP_GROUP_ENABLED)</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>键盘项目的键盘只在你点按麦克风且已允许完全访问时录音，用于本机听写，不会上传，也不会保存录音。The 键盘项目 keyboard records only when you tap the mic and Allow Full Access is on, for on-device dictation. Audio is not uploaded or stored.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

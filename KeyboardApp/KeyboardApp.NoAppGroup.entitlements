@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	    Default signing file for a free Personal Team.
+	    It intentionally has no com.apple.security.application-groups key, so
+	    Xcode can install the app when App Groups are not available.
+	    Settings stay in this process (UserDefaults.standard).
+	    To share settings with the keyboard, set KEYBOARD_APP_GROUP_ENABLED to YES
+	    and point CODE_SIGN_ENTITLEMENTS at KeyboardApp.entitlements.
+	-->
+</dict>
+</plist>

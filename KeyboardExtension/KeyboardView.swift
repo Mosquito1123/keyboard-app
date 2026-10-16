@@ -6,7 +6,7 @@ enum KeyboardAction: Equatable {
     case backspace
     case nextKeyboard
     case microphone
-    case rewrite
+    case rewrite(RewriteTone)
 }
 
 protocol KeyboardViewDelegate: AnyObject {
@@ -20,7 +20,7 @@ final class KeyboardView: UIView {
     private let voiceDetail = UILabel()
     private let voiceWell = UIView()
     private var micButton: UIButton!
-    private var rewriteButton: UIButton!
+    private var toneButtons: [UIButton] = []
     private var shiftButton: UIButton!
     private var planeButton: UIButton!
     private var commaButton: UIButton!
@@ -53,14 +53,14 @@ final class KeyboardView: UIView {
         }
     }
 
-    func applyChrome(language: TypingLanguage, demoEnabled: Bool, synced: Bool) {
+    func applyChrome(language: TypingLanguage, demoEnabled: Bool, synced: Bool, shared: Bool) {
         self.language = language
         setKeyTitle(commaButton, language.commaMark)
         setKeyTitle(periodButton, language.periodMark)
         guard !busy else { return }
         showVoice(
             title: L10n.Keyboard.voiceIdleTitle,
-            detail: L10n.Keyboard.idleDetail(language: language, demoEnabled: demoEnabled, synced: synced),
+            detail: L10n.Keyboard.idleDetail(language: language, demoEnabled: demoEnabled, synced: synced, shared: shared),
             busy: false,
             demoMic: !synced || demoEnabled
         )
@@ -79,9 +79,10 @@ final class KeyboardView: UIView {
         } else {
             micButton.accessibilityLabel = demoMic ? L10n.Keyboard.micDemoHint : L10n.Keyboard.micHint
         }
-        rewriteButton.accessibilityLabel = demoMic ? L10n.Keyboard.rewriteDemoHint : L10n.Keyboard.rewriteHint
-        rewriteButton.isEnabled = !busy
-        rewriteButton.alpha = busy ? 0.4 : 1
+        for button in toneButtons {
+            button.isEnabled = !busy
+            button.alpha = busy ? 0.4 : 1
+        }
     }
 
     private func build() {
@@ -95,6 +96,7 @@ final class KeyboardView: UIView {
 
         configurePlanes()
         root.addArrangedSubview(makeVoiceWell())
+        root.addArrangedSubview(makeActionStrip())
         root.addArrangedSubview(letterPlane)
         root.addArrangedSubview(digitPlane)
         root.addArrangedSubview(makeBottomRow())
@@ -108,7 +110,7 @@ final class KeyboardView: UIView {
         setDigits(false)
         showVoice(
             title: L10n.Keyboard.voiceIdleTitle,
-            detail: L10n.Keyboard.idleDetail(language: language, demoEnabled: true, synced: false),
+            detail: L10n.Keyboard.idleDetail(language: language, demoEnabled: true, synced: false, shared: false),
             busy: false,
             demoMic: true
         )
@@ -162,20 +164,7 @@ final class KeyboardView: UIView {
         micButton.accessibilityIdentifier = "keyboard.microphone"
         micButton.accessibilityLabel = L10n.Keyboard.micHint
 
-        rewriteButton = keyButton(
-            title: L10n.Keyboard.rewriteTitle,
-            fill: Theme.rewriteFill.uiColor,
-            pressed: Theme.rewritePressed.uiColor,
-            foreground: Theme.onRewrite.uiColor,
-            font: .systemFont(ofSize: 15, weight: .semibold),
-            cornerRadius: 12
-        ) { [weak self] in
-            self?.emit(.rewrite)
-        }
-        rewriteButton.accessibilityIdentifier = "keyboard.rewrite"
-        rewriteButton.accessibilityLabel = L10n.Keyboard.rewriteHint
-
-        let row = UIStackView(arrangedSubviews: [micButton, textColumn, rewriteButton])
+        let row = UIStackView(arrangedSubviews: [micButton, textColumn])
         row.axis = .horizontal
         row.alignment = .center
         row.spacing = 8
@@ -184,9 +173,7 @@ final class KeyboardView: UIView {
 
         micButton.widthAnchor.constraint(equalToConstant: 48).isActive = true
         micButton.heightAnchor.constraint(equalToConstant: 48).isActive = true
-        rewriteButton.widthAnchor.constraint(equalToConstant: 64).isActive = true
-        rewriteButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
-        voiceWell.heightAnchor.constraint(equalToConstant: 92).isActive = true
+        voiceWell.heightAnchor.constraint(equalToConstant: 72).isActive = true
 
         NSLayoutConstraint.activate([
             row.leadingAnchor.constraint(equalTo: voiceWell.leadingAnchor, constant: 8),
@@ -194,6 +181,32 @@ final class KeyboardView: UIView {
             row.centerYAnchor.constraint(equalTo: voiceWell.centerYAnchor)
         ])
         return voiceWell
+    }
+
+    private func makeActionStrip() -> UIStackView {
+        let tones: [RewriteTone] = [.polish, .shorter, .formal]
+        let buttons = tones.map { tone -> UIButton in
+            let button = keyButton(
+                title: tone.title.zh,
+                fill: Theme.rewriteFill.uiColor,
+                pressed: Theme.rewritePressed.uiColor,
+                foreground: Theme.onRewrite.uiColor,
+                font: .systemFont(ofSize: 14, weight: .semibold),
+                cornerRadius: 10
+            ) { [weak self] in
+                self?.emit(.rewrite(tone))
+            }
+            button.accessibilityIdentifier = tone == .polish ? "keyboard.rewrite" : "keyboard.tone.\(tone.rawValue)"
+            button.accessibilityLabel = "\(tone.title.zh) · \(tone.title.en)"
+            return button
+        }
+        toneButtons = buttons
+        let row = UIStackView(arrangedSubviews: buttons)
+        row.axis = .horizontal
+        row.spacing = 6
+        row.distribution = .fillEqually
+        row.heightAnchor.constraint(equalToConstant: 34).isActive = true
+        return row
     }
 
     private func equalLetterRow(_ letters: [String], inset: CGFloat) -> UIStackView {

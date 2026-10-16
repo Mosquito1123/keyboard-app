@@ -216,6 +216,70 @@ final class EngineTests: XCTestCase {
         defaults.removePersistentDomain(forName: suite)
     }
 
+    func testIdentifiersAreClaimable() {
+        XCTAssertEqual(AppIdentity.appBundleIdentifier, "com.mosquito1123.keyboardapp")
+        XCTAssertEqual(AppIdentity.keyboardBundleIdentifier, "com.mosquito1123.keyboardapp.keyboard")
+        XCTAssertEqual(AppIdentity.appGroupIdentifier, "group.com.mosquito1123.keyboardapp")
+        XCTAssertFalse(AppIdentity.appBundleIdentifier.contains("example"))
+        XCTAssertFalse(AppIdentity.appGroupIdentifier.contains("example"))
+        XCTAssertFalse(ProductPolicy.trackingEnabled)
+    }
+
+    func testTonePresetsStayOnDevice() async throws {
+        let engine = OnDeviceTextRewriter()
+
+        let shorterChinese = try await engine.rewrite("然后我其实真的想把提纲发给你啊", language: .simplifiedChinese, tone: .shorter)
+        XCTAssertEqual(shorterChinese.text, "我其实真的想把提纲发给你。")
+        XCTAssertEqual(shorterChinese.engineName, "on-device-tone")
+        XCTAssertFalse(shorterChinese.usedDemoFixture)
+
+        let shorterEnglish = try await engine.rewrite("I just really need the outline.", language: .english, tone: .shorter)
+        XCTAssertEqual(shorterEnglish.text, "I need the outline.")
+
+        let formalChinese = try await engine.rewrite("马上搞定，谢谢你", language: .simplifiedChinese, tone: .formal)
+        XCTAssertEqual(formalChinese.text, "立即完成，感谢您。")
+
+        let formalEnglish = try await engine.rewrite("yeah I can't do that", language: .english, tone: .formal)
+        XCTAssertEqual(formalEnglish.text, "Yes I cannot do that.")
+
+        let casualChinese = try await engine.rewrite("请您立即处理", language: .simplifiedChinese, tone: .casual)
+        XCTAssertEqual(casualChinese.text, "你马上处理。")
+
+        let casualEnglish = try await engine.rewrite("I cannot do that. Thank you.", language: .english, tone: .casual)
+        XCTAssertEqual(casualEnglish.text, "I can't do that. Thanks.")
+
+        let shorterJapanese = try await engine.rewrite("ちょっとあの金曜までにね", language: .japanese, tone: .shorter)
+        XCTAssertEqual(shorterJapanese.text, "金曜までに。")
+
+        let polish = try await engine.rewrite("then i went", language: .english, tone: .polish)
+        XCTAssertEqual(polish.text, "Then I went.")
+        XCTAssertEqual(polish.engineName, "on-device-tidy")
+    }
+
+    func testDemoToneUsesHeuristicsExceptPolish() async throws {
+        let demo = DemoTextRewriter(delayNanoseconds: 1_000_000)
+        let polish = try await demo.rewrite("下午见", language: .english, tone: .polish)
+        XCTAssertEqual(polish.text, "(demo rewrite) 下午见.")
+        XCTAssertTrue(polish.usedDemoFixture)
+
+        let shorter = try await demo.rewrite("I just really need the outline.", language: .english, tone: .shorter)
+        XCTAssertEqual(shorter.text, "I need the outline.")
+        XCTAssertFalse(shorter.usedDemoFixture)
+    }
+
+    func testInProcessStoreWhenGroupIsOff() {
+        #if os(Linux)
+        XCTAssertFalse(SharedStore.usesAppGroup)
+        XCTAssertNil(SharedStore.defaults())
+        #endif
+        let defaults = UserDefaults.standard
+        let saved = KeyboardPreferences(language: .english, demoModeEnabled: true)
+        PreferenceStore.save(saved, to: defaults)
+        XCTAssertEqual(PreferenceStore.load(from: defaults).language, .english)
+        defaults.removeObject(forKey: "kp.language")
+        defaults.removeObject(forKey: "kp.demoMode")
+    }
+
     func testPunctuationFollowsLanguage() {
         XCTAssertEqual(TypingLanguage.simplifiedChinese.commaMark, "，")
         XCTAssertEqual(TypingLanguage.english.commaMark, ",")

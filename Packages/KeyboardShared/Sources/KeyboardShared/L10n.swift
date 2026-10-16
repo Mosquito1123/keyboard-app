@@ -76,8 +76,8 @@ public enum L10n {
 
         public static let tryTitle = "在这里试"
         public static let tryTitleEn = "Try it here"
-        public static let tryBody = "启用之后点输入框，用地球键切到「键盘项目」。下面的按钮和键盘走同一套接口：演示关闭时在本机听写和整理，演示打开时插入示例。"
-        public static let tryBodyEn = "After enabling it, focus a field and switch with the globe key. The buttons below use the same path as the keyboard: on-device dictation and tidy-up when demo is off, samples when demo is on."
+        public static let tryBody = "启用之后点输入框，用地球键切到「键盘项目」。下面可以听写。语气整理请打开 AI 试验台，润色、更短、正式和口语都在本机完成。"
+        public static let tryBodyEn = "After enabling it, focus a field and switch with the globe key. You can dictate below. Open the AI playground for polish, shorter, formal, and casual. Those passes stay on this device."
         public static let tryPlaceholder = "点此输入"
         public static let insertSample = "插入语音示例"
         public static let insertSampleEn = "Insert voice sample"
@@ -108,14 +108,14 @@ public enum L10n {
         public static let scopeTitleEn = "What this build actually runs"
         public static let scopeItems: [(String, String)] = [
             ("语音：演示关闭时使用苹果设备端识别。没有 Whisper 运行时。", "Speech: Apple on-device recognition when demo mode is off. No Whisper runtime."),
-            ("润色：演示关闭时只做本机整理（空格、句首大小写、句末标点），不是语言模型。", "Rewrite: with demo mode off, a local tidy-up only (spacing, sentence case, closing punctuation), not a language model."),
+            ("语气：润色、更短、正式、口语都在本机完成。系统提供 Apple Intelligence 时，试验台会先试 Foundation Models，失败就回到规则。", "Tone: polish, shorter, formal, and casual all run on device. When Apple Intelligence exposes Foundation Models, the playground tries that first and falls back to the rules."),
             ("没有内购、广告、追踪，也没有需要密钥的云端接口。", "No in-app purchase, ads, tracking, or cloud API that needs a key.")
         ]
 
-        public static let idTitle = "需要你改掉的标识"
-        public static let idTitleEn = "Identifiers you should replace"
-        public static let idFootnote = "签名前请同时修改 Xcode 的 Bundle Identifier、两个 entitlements 里的 App Group，以及 AppIdentity.swift，让它们保持一致。"
-        public static let idFootnoteEn = "Before signing, change the Xcode bundle identifiers, the App Group in both entitlements files, and AppIdentity.swift so they match."
+        public static let idTitle = "签名用的标识"
+        public static let idTitleEn = "Identifiers used for signing"
+        public static let idFootnote = "主 App、键盘扩展和 App Group 已写成 com.mosquito1123.*。请在 Xcode Signing 里为 group.com.mosquito1123.keyboardapp 打开 App Groups。免费 Personal Team 若仍被拒绝，保持 KEYBOARD_APP_GROUP_ENABLED 为 NO：设置只留在本 App，键盘仍可安装运行。"
+        public static let idFootnoteEn = "The app, keyboard, and App Group already use com.mosquito1123.*. Enable App Groups for group.com.mosquito1123.keyboardapp in Xcode Signing. If a free Personal Team still blocks the group, leave KEYBOARD_APP_GROUP_ENABLED set to NO: settings stay in this app, and the keyboard still installs."
         public static let runningAs = "当前 App 的 Bundle ID"
         public static let runningAsEn = "Bundle ID of this running app"
 
@@ -124,8 +124,12 @@ public enum L10n {
 
     public enum Settings {
         public static let title = "设置"
-        public static let intro = "这些选项保存在 App Group 里。键盘只有在完全访问打开后才能读到它们。"
-        public static let introEn = "These options live in the App Group. The keyboard can read them only after Full Access is on."
+        public static let intro = "语言和演示开关会尽量与键盘共享。没有 App Group 时，它们只保存在本 App 里。"
+        public static let introEn = "Language and the demo switch are shared with the keyboard when an App Group is available. Without one, they stay in this app."
+        public static let groupOn = "App Group 已可用。完全访问打开后，键盘能读到这里的选择。"
+        public static let groupOnEn = "The App Group is available. After Full Access is on, the keyboard can read these choices."
+        public static let groupOff = "App Group 未启用。这是免费 Personal Team 的默认路径：设置留在本 App，键盘使用自己的偏好，仍然可以听写和整理。"
+        public static let groupOffEn = "The App Group is off. That is the free Personal Team default: settings stay in this app, the keyboard uses its own preferences, and dictation plus rewrite still run."
 
         public static let languageHeading = "语言偏好"
         public static let languageHeadingEn = "Language preference"
@@ -138,8 +142,8 @@ public enum L10n {
         public static let demoToggleEn = "Use local samples instead of dictation and tidy-up"
         public static let demoOnDetail = "打开时，麦克风和润色插入写在 App 里的文字，不申请麦克风，也不联网。适合审核或真机麦克风不可用时退回。"
         public static let demoOnDetailEn = "When this is on, the mic and rewrite controls insert text that ships with the app. They do not request the microphone or use the network. Use it for review, or when the microphone is unavailable."
-        public static let demoOffDetail = "关闭时，麦克风使用苹果的设备端语音识别，需要完全访问、麦克风和语音识别权限。润色只在本机整理光标前大约 120 个字。设备端识别不可用时不会改走云端。"
-        public static let demoOffDetailEn = "When this is off, the mic uses Apple’s on-device speech recognition and needs Full Access plus microphone and speech permission. Rewrite only tidies about 120 characters before the cursor, on device. If on-device recognition is unavailable, it does not fall back to a server."
+        public static let demoOffDetail = "关闭时，麦克风使用苹果的设备端语音识别，需要完全访问、麦克风和语音识别权限。语气按钮始终在本机整理选中文字或刚听写的内容，不随演示开关改变。设备端识别不可用时不会改走云端。"
+        public static let demoOffDetailEn = "When this is off, the mic uses Apple’s on-device speech recognition and needs Full Access plus microphone and speech permission. Tone buttons always rewrite the selection or the last dictation on device, whether or not demo mode is on. If on-device recognition is unavailable, it does not fall back to a server."
         public static let syncNote = "没打开完全访问时，键盘读不到这里的选择，改用内置演示：简体中文，演示开，不打开麦克风。"
         public static let syncNoteEn = "Without Full Access the keyboard cannot read this screen. It uses the built-in demo: Simplified Chinese, demo on, microphone closed."
 
@@ -147,6 +151,7 @@ public enum L10n {
         public static let privacyHeadingEn = "Privacy notes"
         public static let privacyItems: [(String, String)] = [
             ("离线优先：没有账号，没有自己的服务器，也不做追踪或广告。", "Offline-first: no account, no server of our own, and no tracking or advertising."),
+            ("润色、更短、正式和口语都在本机处理。能用 Apple Intelligence 时也不离开这台设备。", "Polish, shorter, formal, and casual all run on this device. Apple Intelligence, when it is available, stays on device too."),
             ("听写音频只在本机交给苹果的设备端识别，不保存录音，也不上传。", "Dictation audio is handed only to Apple’s on-device recognizer. Recordings are not stored and not uploaded."),
             ("若该语言不能在本机识别，听写会停止，不会改用云端识别。", "If that language cannot be recognized on device, dictation stops. It does not switch to server recognition."),
             ("系统第一次使用某种语言时，可能会自行下载该语言的听写资源。那是 iOS 的行为，不是本 App 的上传。", "The first time a language is used, iOS may download that language’s dictation assets. That is iOS, not an upload from this app."),
@@ -216,7 +221,7 @@ public enum L10n {
         public static let limitsHeadingEn = "Limits"
         public static let stubItems: [(String, String)] = [
             ("没有内购、广告或追踪。ProductPolicy 里这几项都是关闭的。", "No in-app purchase, ads, or tracking. Those ProductPolicy flags stay off."),
-            ("润色不是写作模型，只整理空格、英文句首和句末标点。", "Rewrite is not a writing model. It tidies spacing, English sentence case, and closing punctuation."),
+            ("键盘上的语气按钮用本机规则。试验台在 iOS 26 且 Apple Intelligence 可用时会先问系统模型，否则用同一套规则。", "Tone buttons on the keyboard use on-device rules. On iOS 26 with Apple Intelligence available, the playground asks the system model first, then uses the same rules."),
             ("没有 Whisper、llama 或其他需要单独下载的运行时。", "There is no Whisper, llama, or other downloadable runtime."),
             ("字母键仍是占位布局，不是中文输入法。语言只有简体中文、英语和日语。", "Letter keys are still a placeholder layout, not a Chinese input method. Languages are Simplified Chinese, English, and Japanese.")
         ]
@@ -252,14 +257,36 @@ public enum L10n {
         public static let voiceFailedTitle = "没有插入"
         public static let voiceFailedDetail = "听写没有完成。可以再试，或打开演示模式。"
         public static let rewriteTitle = "润色"
-        public static let rewriteWorkingTitle = "正在整理"
-        public static let rewriteWorkingDetail = "正在本机整理光标前的文字，不会上传。"
-        public static let rewriteDemoWorkingDetail = "稍等，将把光标前的一小段换成带标记的示例。"
-        public static let rewriteDoneTitle = "已整理"
-        public static let rewriteDoneDemoTitle = "已放入示例"
+        public static let rewriteWorkingDetail = "正在本机处理选中文字或刚听写的内容，不会上传。"
         public static let rewriteEmptyTitle = "没有可整理的文字"
-        public static let rewriteEmptyDetail = "光标前没有文字。先输入或听写，再点润色。"
+        public static let rewriteEmptyDetail = "没有选中文字，光标前也没有内容。先输入、听写或选中一段。"
         public static let rewriteFailedDetail = "整理没有完成，输入框未改动。"
+
+        public static func rewriteWorkingTitle(_ tone: RewriteTone) -> String {
+            switch tone {
+            case .polish:
+                return "正在润色"
+            case .shorter:
+                return "正在缩短"
+            case .formal:
+                return "正在改为正式"
+            case .casual:
+                return "正在改为口语"
+            }
+        }
+
+        public static func rewriteDoneTitle(_ tone: RewriteTone) -> String {
+            switch tone {
+            case .polish:
+                return "已润色"
+            case .shorter:
+                return "已缩短"
+            case .formal:
+                return "已改为正式"
+            case .casual:
+                return "已改为口语"
+            }
+        }
         public static let space = "空格"
         public static let micHint = "听写"
         public static let micDemoHint = "语音示例"
@@ -298,9 +325,9 @@ public enum L10n {
         public static let planeDigitsHint = "数字"
         public static let planeLettersHint = "字母"
 
-        public static func idleDetail(language: TypingLanguage, demoEnabled: Bool, synced: Bool) -> String {
+        public static func idleDetail(language: TypingLanguage, demoEnabled: Bool, synced: Bool, shared: Bool) -> String {
             if !synced {
-                return "完全访问未开，使用内置演示，不会录音。"
+                return "完全访问未开，使用内置演示，不会录音。语气按钮仍在本机整理当前文字。"
             }
             let name: String
             switch language {
@@ -311,10 +338,55 @@ public enum L10n {
             case .japanese:
                 name = "日语"
             }
+            if !shared && demoEnabled {
+                return "\(name) · 演示开。设置未共享。点麦克风插入示例。"
+            }
+            if !shared {
+                return "\(name) · 本机听写。设置未共享，使用键盘自己的偏好。"
+            }
             if demoEnabled {
                 return "\(name) · 演示开。点麦克风插入示例，不会录音。"
             }
             return "\(name) · 本机听写。点麦克风说话，音频不上传。"
+        }
+    }
+
+    public enum Playground {
+        public static let title = "AI 试验台"
+        public static let titleEn = "AI playground"
+        public static let intro = "在这里听写，再用润色、更短、正式或口语整理整段文字。不用离开本 App，也不会做追踪。"
+        public static let introEn = "Dictate here, then polish, shorten, or change tone. You stay in this app, and nothing is tracked."
+        public static let privacy = "能在本机完成的步骤都留在本机。没有账号，没有统计，也不会把文字发到我们的服务器。"
+        public static let privacyEn = "Steps that can run on device stay on device. There is no account, no analytics, and no upload to a server of ours."
+        public static let open = "打开 AI 试验台"
+        public static let openEn = "Open the AI playground"
+        public static let placeholder = "输入、粘贴，或点下面的听写"
+        public static let dictate = "听写到这里"
+        public static let dictateEn = "Dictate into this field"
+        public static let demoNote = "演示模式只影响听写。语气整理始终在本机进行。"
+        public static let demoNoteEn = "Demo mode only affects dictation. Tone rewrite always stays on device."
+        public static let intelligenceOn = "Apple Intelligence 的系统模型可用，整理会先用它。"
+        public static let intelligenceOnEn = "The Apple Intelligence system model is available. Rewrite tries it first."
+        public static let intelligenceOff = "系统模型不可用。整理使用本机规则。iOS 18 没有公开的 Foundation Models 接口，iOS 26 且打开 Apple Intelligence 后才会用到。"
+        public static let intelligenceOffEn = "The system model is unavailable. Rewrite uses on-device rules. iOS 18 has no public Foundation Models API; that path starts on iOS 26 with Apple Intelligence on."
+        public static let empty = "先输入或听写一段文字，再选择语气。"
+        public static let emptyEn = "Type or dictate something, then pick a tone."
+        public static let failed = "没有改写。原文还在。"
+        public static let failedEn = "Nothing was rewritten. The original text is unchanged."
+
+        public static func engineLine(_ name: String) -> String {
+            switch name {
+            case "apple-foundation-model":
+                return "本次使用 Apple Intelligence（本机）· \(name)"
+            case "on-device-tone":
+                return "本次使用本机语气规则 · \(name)"
+            case "on-device-tidy":
+                return "本次使用本机整理 · \(name)"
+            case "demo-fixture":
+                return "本次使用内置示例 · \(name)"
+            default:
+                return "本次引擎 · \(name)"
+            }
         }
     }
 }

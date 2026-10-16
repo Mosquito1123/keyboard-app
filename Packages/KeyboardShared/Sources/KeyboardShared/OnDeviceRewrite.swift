@@ -15,9 +15,11 @@ public struct OnDeviceTextRewriter: TextRewriting {
 
     public init() {}
 
-    public func rewrite(_ source: String, language: TypingLanguage) async throws -> RewrittenPassage {
-        let text = try OnDeviceRewrite.tidy(source, language: language)
-        return RewrittenPassage(text: text, engineName: engineName, usedDemoFixture: false)
+    public func rewrite(_ source: String, language: TypingLanguage, tone: RewriteTone) async throws -> RewrittenPassage {
+        let tidied = try OnDeviceRewrite.tidy(source, language: language)
+        let text = try ToneRewrite.apply(tidied, language: language, tone: tone)
+        let name = tone == .polish ? engineName : "on-device-tone"
+        return RewrittenPassage(text: text, engineName: name, usedDemoFixture: false)
     }
 }
 
