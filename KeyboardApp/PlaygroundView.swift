@@ -119,10 +119,10 @@ struct PlaygroundView: View {
                         .background(Theme.rewriteFill.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
-                    .disabled(busy)
+                    .disabled(busy || draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-            .opacity(busy ? 0.55 : 1)
+            .opacity(busy || draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.4 : 1)
         }
     }
 
@@ -138,12 +138,6 @@ struct PlaygroundView: View {
                 .font(.footnote)
                 .foregroundStyle(Theme.statusText.color)
             Text(intelligenceAvailable ? L10n.Playground.intelligenceOnEn : L10n.Playground.intelligenceOffEn)
-                .font(.caption)
-                .foregroundStyle(Theme.muted.color)
-            Text(SharedStore.usesAppGroup ? L10n.Settings.groupOn : L10n.Settings.groupOff)
-                .font(.footnote)
-                .foregroundStyle(Theme.cream.color)
-            Text(SharedStore.usesAppGroup ? L10n.Settings.groupOnEn : L10n.Settings.groupOffEn)
                 .font(.caption)
                 .foregroundStyle(Theme.muted.color)
         }

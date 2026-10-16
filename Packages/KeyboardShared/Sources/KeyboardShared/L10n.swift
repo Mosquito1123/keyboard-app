@@ -25,6 +25,12 @@ public enum L10n {
 
         public static let enableHeading = "三步启用"
         public static let enableHeadingEn = "Enable it in three steps"
+        public static let enableReadyTitle = "键盘已添加"
+        public static let enableReadyTitleEn = "Keyboard added"
+        public static let enableReadyDetail = "打开任意输入框，点地球键，选「键盘项目」。"
+        public static let enableReadyDetailEn = "Focus a text field, tap the globe, and choose 键盘项目."
+        public static let enableReadyNext = "听写还需允许完全访问，并在设置里打开麦克风。"
+        public static let enableReadyNextEn = "Dictation also needs Full Access, and the microphone turned on in Settings."
 
         public static let steps: [SetupStep] = [
             SetupStep(
@@ -161,8 +167,8 @@ public enum L10n {
 
         public static let permissionHeading = "麦克风和语音识别"
         public static let permissionHeadingEn = "Microphone and speech recognition"
-        public static let permissionIntro = "请在主 App 里授权。键盘扩展里的系统提示不一定弹得出来。拒绝之后可以去系统设置里重新打开。"
-        public static let permissionIntroEn = "Grant access in this app. The system prompt is not reliable inside the keyboard extension. If you deny it, you can turn it back on in Settings."
+        public static let permissionIntro = "在这里允许麦克风和语音识别。若已拒绝，到系统设置重新打开。"
+        public static let permissionIntroEn = "Allow the microphone and speech recognition here. If you denied them, turn them on in Settings."
         public static let permissionSpeech = "语音识别"
         public static let permissionSpeechEn = "Speech recognition"
         public static let permissionMic = "麦克风"
@@ -239,28 +245,31 @@ public enum L10n {
     }
 
     public enum Keyboard {
-        public static let voiceIdleTitle = "语音条"
-        public static let voiceListeningTitle = "正在听写"
-        public static let voiceListeningDetail = "请说话。只在本机识别。再点一次结束，停顿后也会结束。"
-        public static let voiceRequestingTitle = "正在请求权限"
-        public static let voiceRequestingDetail = "请允许麦克风和语音识别。若看不到提示，打开主 App 的设置。"
-        public static let voiceFinishingTitle = "正在结束"
-        public static let voiceFinishingDetail = "正在完成本机识别…"
+        public static let voiceIdleTitle = "听写"
+        public static let voiceListeningTitle = "正在听"
+        public static let voiceListeningDetail = "再点一下结束"
+        public static let voiceRequestingTitle = "需要权限"
+        public static let voiceRequestingDetail = "请允许麦克风和语音识别。看不到提示时，打开主 App 的设置。"
+        public static let voiceFinishingTitle = "正在识别"
+        public static let voiceFinishingDetail = "马上写入文字"
         public static let voiceWorkingTitle = "正在准备示例"
-        public static let voiceWorkingDetail = "稍等，将插入本地示例。不会录音。再点一次可取消。"
-        public static let voiceDoneTitle = "已插入听写"
+        public static let voiceWorkingDetail = "不会录音。再点一下取消。"
+        public static let voiceDoneTitle = "已写入"
         public static let voiceDoneDemoTitle = "已插入示例"
-        public static let voiceCancelled = "已取消，没有插入文字。"
-        public static let voiceEmptyTitle = "没有听到内容"
-        public static let voiceEmptyDetail = "没有识别到文字，输入框未改动。"
-        public static let voiceUnwiredTitle = "识别不可用"
-        public static let voiceFailedTitle = "没有插入"
-        public static let voiceFailedDetail = "听写没有完成。可以再试，或打开演示模式。"
+        public static let voiceCancelled = "已取消"
+        public static let voiceEmptyTitle = "没听到"
+        public static let voiceEmptyDetail = "输入框没改。再点麦克风试一次。"
+        public static let voiceUnwiredTitle = "现在不能听写"
+        public static let voiceFailedTitle = "没写上"
+        public static let voiceFailedDetail = "再点麦克风试一次，或打开演示模式。"
         public static let rewriteTitle = "润色"
-        public static let rewriteWorkingDetail = "正在本机处理选中文字或刚听写的内容，不会上传。"
-        public static let rewriteEmptyTitle = "没有可整理的文字"
-        public static let rewriteEmptyDetail = "没有选中文字，光标前也没有内容。先输入、听写或选中一段。"
-        public static let rewriteFailedDetail = "整理没有完成，输入框未改动。"
+        public static let rewriteWorkingDetail = "正在本机整理，可以继续打字。"
+        public static let rewriteEmptyTitle = "没有文字"
+        public static let rewriteEmptyDetail = "先输入或听写，再点润色、更短或正式。"
+        public static let rewriteFailedDetail = "没有改写，原文还在。"
+        public static let rewriteStaleDetail = "文字已变，没有替换。"
+        public static let micStopHint = "结束听写"
+        public static let micCancelHint = "取消"
 
         public static func rewriteWorkingTitle(_ tone: RewriteTone) -> String {
             switch tone {
@@ -296,22 +305,22 @@ public enum L10n {
         public static func speechFailure(for failure: SpeechFailure) -> (title: String, detail: String) {
             switch failure {
             case .notImplemented:
-                return (voiceUnwiredTitle, "这套系统没有接上设备端识别。可打开演示模式。")
+                return (voiceUnwiredTitle, "这台设备不能离线识别。可打开演示模式。")
             case .speechNotDetermined:
-                return (voiceRequestingTitle, "还没有完成授权。请打开主 App，在设置里允许语音识别。")
+                return (voiceRequestingTitle, "打开主 App 的设置，允许语音识别。")
             case .speechDenied:
-                return (voiceFailedTitle, "语音识别已被拒绝。请到系统设置里为本 App 打开，或改用演示模式。")
+                return ("语音识别已关闭", "到系统设置为本 App 打开，或改用演示。")
             case .speechRestricted:
-                return (voiceFailedTitle, "这台设备限制了语音识别，无法听写。")
+                return ("无法听写", "这台设备限制了语音识别。")
             case .microphoneDenied:
-                return (voiceFailedTitle, "麦克风已被拒绝。请到系统设置里允许，或打开演示模式。")
+                return ("麦克风已关闭", "到系统设置允许麦克风，或改用演示。")
             case .onDeviceUnavailable:
-                return (voiceUnwiredTitle, "当前语言不能在本机识别。不会改用云端。可换语言，或打开演示模式。")
+                return (voiceUnwiredTitle, "这个语言不能离线识别。可换语言，或打开演示。不会上传。")
             case .recognizerUnavailable:
-                return (voiceUnwiredTitle, "识别器暂不可用。请稍后再试，或打开演示模式。")
+                return (voiceUnwiredTitle, "稍后再试，或打开演示模式。")
             case .audioSessionFailed(let code):
                 let suffix = code == 0 ? "" : "（\(code)）"
-                return (voiceFailedTitle, "键盘里打不开麦克风\(suffix)。请用主 App 的本机听写，或打开演示模式。")
+                return ("键盘里无法录音", "打不开麦克风\(suffix)。请用主 App 的「本机听写」。")
             case .noSpeech:
                 return (voiceEmptyTitle, voiceEmptyDetail)
             case .interrupted:
@@ -327,7 +336,7 @@ public enum L10n {
 
         public static func idleDetail(language: TypingLanguage, demoEnabled: Bool, synced: Bool, shared: Bool) -> String {
             if !synced {
-                return "完全访问未开，使用内置演示，不会录音。语气按钮仍在本机整理当前文字。"
+                return "完全访问未开。点一下插入示例，不会录音。"
             }
             let name: String
             switch language {
@@ -338,16 +347,13 @@ public enum L10n {
             case .japanese:
                 name = "日语"
             }
-            if !shared && demoEnabled {
-                return "\(name) · 演示开。设置未共享。点麦克风插入示例。"
+            if demoEnabled {
+                return "\(name) · 点一下插入示例"
             }
             if !shared {
-                return "\(name) · 本机听写。设置未共享，使用键盘自己的偏好。"
+                return "\(name) · 点一下开始，再点一下结束"
             }
-            if demoEnabled {
-                return "\(name) · 演示开。点麦克风插入示例，不会录音。"
-            }
-            return "\(name) · 本机听写。点麦克风说话，音频不上传。"
+            return "\(name) · 点一下开始，再点一下结束"
         }
     }
 

@@ -11,7 +11,6 @@ struct KeyboardApp: App {
                 OnboardingView()
             }
             .environmentObject(model)
-            .preferredColorScheme(.dark)
             .tint(Theme.mic.color)
         }
     }

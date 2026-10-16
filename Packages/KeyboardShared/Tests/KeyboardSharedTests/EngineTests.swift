@@ -280,6 +280,49 @@ final class EngineTests: XCTestCase {
         defaults.removeObject(forKey: "kp.demoMode")
     }
 
+    func testVoiceCopyIsShortAndActionable() {
+        let locked = L10n.Keyboard.idleDetail(
+            language: .simplifiedChinese,
+            demoEnabled: true,
+            synced: false,
+            shared: false
+        )
+        XCTAssertFalse(locked.contains("语音条"))
+        XCTAssertFalse(locked.contains("设置未共享"))
+        XCTAssertTrue(locked.contains("完全访问"))
+        XCTAssertLessThan(locked.count, 48)
+
+        let ready = L10n.Keyboard.idleDetail(
+            language: .english,
+            demoEnabled: false,
+            synced: true,
+            shared: false
+        )
+        XCTAssertTrue(ready.contains("EN"))
+        XCTAssertTrue(ready.contains("点一下"))
+        XCTAssertFalse(L10n.Keyboard.voiceIdleTitle.contains("语音条"))
+        XCTAssertFalse(L10n.Keyboard.rewriteStaleDetail.isEmpty)
+        XCTAssertFalse(L10n.Keyboard.rewriteEmptyTitle.isEmpty)
+    }
+
+    func testThemeKeepsWarmInkInBothAppearances() {
+        XCTAssertNotEqual(Theme.canvas.light, Theme.canvas.dark)
+        XCTAssertGreaterThan(Theme.canvas.light.red, Theme.canvas.dark.red)
+        XCTAssertEqual(Theme.mic.light, Theme.mic.dark)
+        XCTAssertGreaterThan(Theme.keyFillPressed.dark.red, 0.5)
+        XCTAssertLessThan(Theme.cream.light.red, 0.3)
+        XCTAssertGreaterThan(Theme.cream.dark.red, 0.8)
+    }
+
+    func testKeyboardInstallListMatchesExtensionId() {
+        let id = AppIdentity.keyboardBundleIdentifier
+        XCTAssertTrue(KeyboardInstallStatus.isListed([id], bundleIdentifier: id))
+        XCTAssertTrue(KeyboardInstallStatus.isListed(["\(id) (zh_CN)"], bundleIdentifier: id))
+        XCTAssertFalse(KeyboardInstallStatus.isListed([AppIdentity.appBundleIdentifier], bundleIdentifier: id))
+        XCTAssertFalse(KeyboardInstallStatus.isListed([], bundleIdentifier: id))
+        XCTAssertEqual(AppIdentity.releaseVersion, "0.5.0")
+    }
+
     func testPunctuationFollowsLanguage() {
         XCTAssertEqual(TypingLanguage.simplifiedChinese.commaMark, "，")
         XCTAssertEqual(TypingLanguage.english.commaMark, ",")

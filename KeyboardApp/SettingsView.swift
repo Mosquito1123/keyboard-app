@@ -7,6 +7,8 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
     @State private var availability = OnDeviceSpeechAccess.current(language: .simplifiedChinese)
     @State private var requestingPermission = false
+    @State private var showLimits = false
+    @State private var showIdentity = false
 
     var body: some View {
         ScrollView {
@@ -35,12 +37,41 @@ struct SettingsView: View {
                     titleEn: L10n.Settings.privacyHeadingEn,
                     items: L10n.Settings.privacyItems
                 )
-                bulletCard(
-                    symbol: "wrench.and.screwdriver",
-                    title: L10n.Settings.limitsHeading,
-                    titleEn: L10n.Settings.limitsHeadingEn,
-                    items: L10n.Settings.stubItems
-                )
+                disclosureCard(title: L10n.Settings.limitsHeading, titleEn: L10n.Settings.limitsHeadingEn, symbol: "wrench.and.screwdriver", isExpanded: $showLimits) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(Array(L10n.Settings.stubItems.enumerated()), id: \.offset) { _, item in
+                            bilingualLine(item.0, en: item.1)
+                        }
+                        ForEach(Array(L10n.App.scopeItems.enumerated()), id: \.offset) { _, item in
+                            bilingualLine(item.0, en: item.1)
+                        }
+                        Text(LanguageModelStub.scopeNote)
+                            .font(.footnote.monospaced())
+                            .foregroundStyle(Theme.statusText.color)
+                    }
+                    .padding(.top, 8)
+                }
+                disclosureCard(title: L10n.App.idTitle, titleEn: L10n.App.idTitleEn, symbol: "tag", isExpanded: $showIdentity) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        identityRow(L10n.App.runningAs, en: L10n.App.runningAsEn, value: Bundle.main.bundleIdentifier ?? "—")
+                        identityRow("主 App", en: "Containing app", value: AppIdentity.appBundleIdentifier)
+                        identityRow("键盘扩展", en: "Keyboard extension", value: AppIdentity.keyboardBundleIdentifier)
+                        identityRow("App Group", en: "App Group", value: AppIdentity.appGroupIdentifier)
+                        identityRow(
+                            "当前是否共享设置",
+                            en: "Settings sharing now",
+                            value: SharedStore.usesAppGroup ? "App Group" : "in-process"
+                        )
+                        identityRow("保留的 URL Scheme", en: "Reserved URL scheme", value: "\(AppIdentity.urlScheme)://")
+                        Text(L10n.App.idFootnote)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.cream.color)
+                        Text(L10n.App.idFootnoteEn)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.muted.color)
+                    }
+                    .padding(.top, 8)
+                }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 24)
@@ -290,6 +321,57 @@ struct SettingsView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardBackground)
+    }
+
+    private func bilingualLine(_ zh: String, en: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(zh)
+                .foregroundStyle(Theme.cream.color)
+            Text(en)
+                .font(.footnote)
+                .foregroundStyle(Theme.muted.color)
+        }
+    }
+
+    private func disclosureCard<Content: View>(
+        title: String,
+        titleEn: String,
+        symbol: String,
+        isExpanded: Binding<Bool>,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        DisclosureGroup(isExpanded: isExpanded) {
+            content()
+        } label: {
+            Label {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.headline)
+                    Text(titleEn)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.muted.color)
+                }
+            } icon: {
+                Image(systemName: symbol)
+            }
+            .foregroundStyle(Theme.cream.color)
+        }
+        .tint(Theme.cream.color)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBackground)
+    }
+
+    private func identityRow(_ zh: String, en: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("\(zh) · \(en)")
+                .font(.caption)
+                .foregroundStyle(Theme.muted.color)
+            Text(value)
+                .font(.body.monospaced())
+                .foregroundStyle(Theme.statusText.color)
+                .textSelection(.enabled)
+        }
     }
 
     private func sectionHeader(_ zh: String, en: String) -> some View {

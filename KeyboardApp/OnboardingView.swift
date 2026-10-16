@@ -5,24 +5,21 @@ import UIKit
 struct OnboardingView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
     @State private var draft = ""
     @State private var isSampling = false
     @State private var sampleNote = ""
+    @State private var keyboardAdded = false
+    @State private var stepsExpanded = true
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 16) {
                 header
-                sectionHeader(L10n.App.enableHeading, en: L10n.App.enableHeadingEn)
-                VStack(spacing: 12) {
-                    ForEach(L10n.App.steps) { step in
-                        StepCard(step: step)
-                    }
-                }
+                enableCard
                 fullAccessCard
-                settingsEntry
                 tryCard
-                playgroundEntry
+                playgroundLink
                 InfoCard(
                     symbol: "mic",
                     title: L10n.App.micTitle,
@@ -30,11 +27,9 @@ struct OnboardingView: View {
                     message: L10n.App.micBody,
                     messageEn: L10n.App.micBodyEn
                 )
-                scopeCard
-                identityCard
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 28)
+            .padding(.vertical, 20)
             .frame(maxWidth: 680)
             .frame(maxWidth: .infinity)
         }
@@ -52,6 +47,20 @@ struct OnboardingView: View {
         }
         .toolbarBackground(Theme.canvas.color, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
+        .onAppear(perform: refreshInstalled)
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            refreshInstalled()
+        }
+    }
+
+    private func refreshInstalled() {
+        let listed = UserDefaults.standard.stringArray(forKey: "AppleKeyboards") ?? []
+        let added = KeyboardInstallStatus.isListed(listed, bundleIdentifier: AppIdentity.keyboardBundleIdentifier)
+        if added && !keyboardAdded {
+            stepsExpanded = false
+        }
+        keyboardAdded = added
     }
 
     private var header: some View {
@@ -75,7 +84,7 @@ struct OnboardingView: View {
                 }
             }
             Text(AppIdentity.displayName)
-                .font(.system(size: 40, weight: .semibold))
+                .font(.system(size: 32, weight: .semibold))
                 .foregroundStyle(Theme.cream.color)
             Text(L10n.App.eyebrow)
                 .font(.headline)
@@ -91,6 +100,85 @@ struct OnboardingView: View {
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted.color)
         }
+    }
+
+    private var enableCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if keyboardAdded {
+                successBanner
+            }
+            DisclosureGroup(isExpanded: $stepsExpanded) {
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(L10n.App.steps) { step in
+                        StepRow(step: step)
+                    }
+                }
+                .padding(.top, 10)
+            } label: {
+                sectionHeader(L10n.App.enableHeading, en: L10n.App.enableHeadingEn)
+            }
+            .tint(Theme.cream.color)
+
+            Button {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    openURL(url)
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.App.systemSettings)
+                        .font(.headline)
+                    Text(L10n.App.systemSettingsEn)
+                        .font(.footnote)
+                }
+                .foregroundStyle(Theme.onMic.color)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(Theme.mic.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            Text(L10n.App.systemSettingsNote)
+                .font(.footnote)
+                .foregroundStyle(Theme.muted.color)
+            Text(L10n.App.systemSettingsNoteEn)
+                .font(.caption)
+                .foregroundStyle(Theme.muted.color)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBackground)
+    }
+
+    private var successBanner: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title2)
+                .foregroundStyle(Theme.successText.color)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(L10n.App.enableReadyTitle)
+                    .font(.headline)
+                    .foregroundStyle(Theme.successText.color)
+                Text(L10n.App.enableReadyTitleEn)
+                    .font(.caption)
+                    .foregroundStyle(Theme.successText.color.opacity(0.8))
+                Text(L10n.App.enableReadyDetail)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.successText.color)
+                Text(L10n.App.enableReadyDetailEn)
+                    .font(.caption)
+                    .foregroundStyle(Theme.successText.color.opacity(0.8))
+                Text(L10n.App.enableReadyNext)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.successText.color)
+                    .padding(.top, 2)
+                Text(L10n.App.enableReadyNextEn)
+                    .font(.caption)
+                    .foregroundStyle(Theme.successText.color.opacity(0.8))
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.successFill.color, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private var fullAccessCard: some View {
@@ -117,31 +205,6 @@ struct OnboardingView: View {
 
             compareColumn(L10n.App.willHeading, en: L10n.App.willHeadingEn, items: L10n.App.fullAccessWill, symbol: "checkmark")
             compareColumn(L10n.App.wontHeading, en: L10n.App.wontHeadingEn, items: L10n.App.fullAccessWont, symbol: "xmark")
-
-            Button {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    openURL(url)
-                }
-            } label: {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(L10n.App.systemSettings)
-                        .font(.headline)
-                    Text(L10n.App.systemSettingsEn)
-                        .font(.footnote)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(Theme.quietKey.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Theme.cream.color)
-
-            Text(L10n.App.systemSettingsNote)
-                .font(.footnote)
-                .foregroundStyle(Theme.cream.color)
-            Text(L10n.App.systemSettingsNoteEn)
-                .font(.footnote)
-                .foregroundStyle(Theme.muted.color)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -175,32 +238,6 @@ struct OnboardingView: View {
         }
     }
 
-    private var settingsEntry: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(L10n.App.openSettingsTitle, en: L10n.App.openSettingsTitleEn)
-            Text(L10n.App.openSettingsBody)
-                .font(.subheadline)
-                .foregroundStyle(Theme.cream.color)
-            Text(L10n.App.openSettingsBodyEn)
-                .font(.footnote)
-                .foregroundStyle(Theme.muted.color)
-            NavigationLink {
-                SettingsView()
-            } label: {
-                Text(L10n.App.settingsButton)
-                    .font(.headline)
-                    .foregroundStyle(Theme.onMic.color)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Theme.mic.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(cardBackground)
-    }
-
     private var tryCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader(L10n.App.tryTitle, en: L10n.App.tryTitleEn)
@@ -230,12 +267,14 @@ struct OnboardingView: View {
                 ) {
                     await insertSample()
                 }
+                .disabled(isSampling)
+                .opacity(isSampling ? 0.55 : 1)
                 sampleButton(L10n.App.rewriteSample, en: L10n.App.rewriteSampleEn, fill: Theme.rewriteFill.color, foreground: Theme.onRewrite.color) {
                     await rewriteDraft()
                 }
+                .disabled(isSampling || draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .opacity(isSampling || draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.4 : 1)
             }
-            .disabled(isSampling)
-            .opacity(isSampling ? 0.55 : 1)
 
             if !sampleNote.isEmpty {
                 Text(sampleNote)
@@ -247,34 +286,28 @@ struct OnboardingView: View {
         .background(cardBackground)
     }
 
-    private var playgroundEntry: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader(L10n.Playground.title, en: L10n.Playground.titleEn)
-            Text(L10n.Playground.intro)
-                .font(.subheadline)
-                .foregroundStyle(Theme.cream.color)
-            Text(L10n.Playground.privacy)
-                .font(.footnote)
-                .foregroundStyle(Theme.statusText.color)
-            NavigationLink {
-                PlaygroundView()
-            } label: {
+    private var playgroundLink: some View {
+        NavigationLink {
+            PlaygroundView()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "sparkles")
+                    .font(.body.weight(.semibold))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(L10n.Playground.open)
                         .font(.headline)
                     Text(L10n.Playground.openEn)
                         .font(.footnote)
                 }
-                .foregroundStyle(Theme.onRewrite.color)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(Theme.rewriteFill.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
             }
-            .buttonStyle(.plain)
+            .foregroundStyle(Theme.onRewrite.color)
+            .padding(14)
+            .background(Theme.rewriteFill.color, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(cardBackground)
+        .buttonStyle(.plain)
     }
 
     private func sampleButton(
@@ -299,72 +332,6 @@ struct OnboardingView: View {
             .background(fill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
-    }
-
-    private var scopeCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L10n.App.scopeTitle)
-                        .font(.headline)
-                    Text(L10n.App.scopeTitleEn)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.muted.color)
-                }
-            } icon: {
-                Image(systemName: "shippingbox")
-            }
-            .foregroundStyle(Theme.cream.color)
-
-            ForEach(Array(L10n.App.scopeItems.enumerated()), id: \.offset) { _, item in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.0)
-                        .foregroundStyle(Theme.cream.color)
-                    Text(item.1)
-                        .font(.footnote)
-                        .foregroundStyle(Theme.muted.color)
-                }
-            }
-
-            Text(LanguageModelStub.scopeNote)
-                .font(.footnote.monospaced())
-                .foregroundStyle(Theme.statusText.color)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(cardBackground)
-    }
-
-    private var identityCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L10n.App.idTitle)
-                    .font(.headline)
-                    .foregroundStyle(Theme.cream.color)
-                Text(L10n.App.idTitleEn)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.muted.color)
-            }
-            identityRow(L10n.App.runningAs, en: L10n.App.runningAsEn, value: Bundle.main.bundleIdentifier ?? "—")
-            identityRow("主 App", en: "Containing app", value: AppIdentity.appBundleIdentifier)
-            identityRow("键盘扩展", en: "Keyboard extension", value: AppIdentity.keyboardBundleIdentifier)
-            identityRow("App Group", en: "App Group", value: AppIdentity.appGroupIdentifier)
-            identityRow(
-                "当前是否共享设置",
-                en: "Settings sharing now",
-                value: SharedStore.usesAppGroup ? "App Group" : "in-process"
-            )
-            identityRow("保留的 URL Scheme", en: "Reserved URL scheme", value: "\(AppIdentity.urlScheme)://")
-            Text(L10n.App.idFootnote)
-                .font(.footnote)
-                .foregroundStyle(Theme.cream.color)
-            Text(L10n.App.idFootnoteEn)
-                .font(.footnote)
-                .foregroundStyle(Theme.muted.color)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(cardBackground)
     }
 
     @MainActor
@@ -428,18 +395,6 @@ struct OnboardingView: View {
         }
     }
 
-    private func identityRow(_ zh: String, en: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("\(zh) · \(en)")
-                .font(.caption)
-                .foregroundStyle(Theme.muted.color)
-            Text(value)
-                .font(.body.monospaced())
-                .foregroundStyle(Theme.statusText.color)
-                .textSelection(.enabled)
-        }
-    }
-
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: 18, style: .continuous)
             .fill(Theme.card.color)
@@ -450,41 +405,32 @@ struct OnboardingView: View {
     }
 }
 
-private struct StepCard: View {
+private struct StepRow: View {
     let step: SetupStep
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 12) {
             Text("\(step.id)")
-                .font(.headline.monospacedDigit())
+                .font(.subheadline.weight(.semibold).monospacedDigit())
                 .foregroundStyle(Theme.onMic.color)
-                .frame(width: 32, height: 32)
+                .frame(width: 26, height: 26)
                 .background(Theme.mic.color, in: Circle())
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(step.title)
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.cream.color)
                 Text(step.titleEn)
-                    .font(.subheadline.weight(.medium))
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(Theme.statusText.color)
                 Text(step.detail)
-                    .font(.subheadline)
+                    .font(.footnote)
                     .foregroundStyle(Theme.cream.color)
                 Text(step.detailEn)
-                    .font(.footnote)
+                    .font(.caption)
                     .foregroundStyle(Theme.muted.color)
             }
         }
-        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Theme.card.color)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Theme.hairline.color, lineWidth: 1)
-                }
-        )
     }
 }
 
