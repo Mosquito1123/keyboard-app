@@ -1,6 +1,6 @@
 # App Store readiness / 上架准备
 
-Version **0.4.0** (build 4). This is an engineering checklist for a later App Store Connect upload. It does not upload a build or create an app record. Bundle IDs are already `com.mosquito1123.*`.
+Version **0.5.0** (build 5). This is an engineering checklist for a later App Store Connect upload. It does not upload a build or create an app record. Bundle IDs are already `com.mosquito1123.*`.
 
 这一版是上架前的工程清单，不是向 App Store Connect 上传构建。Bundle ID 已经是 `com.mosquito1123.*`。
 
@@ -182,7 +182,7 @@ ITSAppUsesNonExemptEncryption 为 false。隐私营养标签：不收集数据�
 - Bundle IDs are `com.mosquito1123.*`. A Personal Team can run without the App Group. Settings sync needs the group entitlement turned on.
 - Letter keys are QWERTY. This is not a Chinese, Japanese, or English input method and does not offer candidates.
 - Only three language preferences: Simplified Chinese (`zh-CN`), English (`en-US`), Japanese (`ja-JP`).
-- Tone rewrite is an on-device heuristic (polish, shorter, formal, casual). The containing app may call Apple's Foundation Models on iOS 26 when the system model is available, and falls back to the heuristic. The keyboard extension does not link that framework. Empty text shows an empty state and inserts nothing. Nothing is tracked.
+- Tone rewrite is an on-device heuristic (polish, shorter, formal, casual). The containing app may call Apple's Foundation Models on iOS 26 when the system model is available, and falls back to the heuristic. The keyboard extension does not link that framework. Empty text disables the tone buttons and inserts nothing. Nothing is tracked.
 - Dictation ends on a second tap, after about 1.6 seconds of silence once speech has started, after 6 seconds with no speech, or at 18 seconds.
 - `requiresOnDeviceRecognition` is always set. There is no server fallback and no WhisperKit / llama.cpp / other GPL runtime, optional or otherwise.
 - A custom keyboard is not guaranteed to be allowed to record. If `AVAudioSession` fails, the strip shows the error code and leaves the field unchanged. The containing app’s dictate button is the reliable path.

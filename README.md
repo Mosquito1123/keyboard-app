@@ -1,6 +1,15 @@
 # 键盘项目 / KeyboardApp
 
-Original iOS system keyboard. MIT license. Version **0.4.0**. Deployment target **iOS 17**. Open with **Xcode 16** or newer.
+Original iOS system keyboard. MIT license. Version **0.5.0**. Deployment target **iOS 17**. Open with **Xcode 16** or newer.
+
+### 0.5.0
+
+The keyboard is the focus of this release. The containing app is the same product, with a shorter first screen.
+
+- Keys darken and shrink slightly while pressed. A click plays when keyboard clicks are on, and a light haptic plays when the device allows it. Shift, delete, return, and 123 are wider. Holding delete repeats, then speeds up. Shift and 123/ABC switch immediately.
+- The voice strip has separate idle, listening, recognizing, error, and done states. Copy is short. One tap starts. A second tap ends listening or cancels a sample. The strip itself is tappable, not only the mic button.
+- 润色 / 更短 / 正式 stay off when there is nothing to rewrite. A short status appears and the keys stay usable. If the text changes before the result is ready, the field is left as it is.
+- Light and dark use the same warm ink palette. The first screen leads with the add-keyboard steps and shows a success state once iOS lists the keyboard. Signing identifiers and the longer limits live under Settings.
 
 The home-screen name is **键盘项目**. Bundle IDs are already set to a Personal Team–friendly prefix (the App Store checklist is [APP_STORE.md](APP_STORE.md)):
 
@@ -162,9 +171,9 @@ To debug the extension itself, use the **KeyboardExtension** scheme. Xcode asks 
 5. On the voice strip, tap the microphone.
    - Demo on, or Full Access off: a sample sentence appears. The title says it is a sample. Tap again during the wait to cancel.
    - Demo off and Full Access on: speak. A second tap ends listening and inserts the transcript. A pause does the same. Permission problems, an unavailable on-device model, and an audio-session failure each leave the field unchanged and explain why.
-6. **润色**, **更短**, and **正式** with an empty field show an empty state. With a selection, they replace that selection. Otherwise they replace the last dictated text when it is still before the cursor, or about 160 characters before the cursor. Demo mode does not turn these into a labeled sample.
+6. **润色**, **更短**, and **正式** are off when the field has no text. With a selection, they replace that selection. Otherwise they replace the last dictated text when it is still before the cursor, or about 160 characters before the cursor. A short status reports success or failure, and typing stays available. If the text changed, nothing is replaced. Demo mode does not turn these into a labeled sample.
 
-`RequestsOpenAccess` is `true`, which is what makes the Allow Full Access switch appear. Letter keys still type when the switch is off. Until it is on, the voice strip says it is using the built-in demo and is not reading the app’s settings.
+`RequestsOpenAccess` is `true`, which is what makes the Allow Full Access switch appear. Letter keys still type when the switch is off. Until it is on, the voice strip says Full Access is off and a tap inserts a sample without recording.
 
 Basic typing does not need the network. This build does not contact a server of its own.
 
@@ -188,6 +197,15 @@ Packages/KeyboardShared/        Theme, strings, preferences, speech, tone rewrit
 ---
 
 ## 中文
+
+### 0.5.0
+
+这一版主要改键盘手感。主 App 只是把第一屏收短。
+
+- 按下时键会变深并略微缩小。系统允许按键音时会响一下；设备支持时再给轻触反馈。Shift、删除、换行和 123 更宽。按住删除会连续删，并逐渐加快。大小写和 123/ABC 立即切换。
+- 语音条分开显示待命、正在听、正在识别、出错和完成。文案更短。点一下开始，再点一下结束或取消示例。整条都可以点，不只是麦克风按钮。
+- 没有文字时，润色、更短、正式是灰色的。处理时只出现短暂提示，键盘不会被锁住。若文字已经变了，就不会替换。
+- 浅色和深色用同一套暖色。第一屏先写怎么添加键盘；系统列表里已经有它时，会显示「键盘已添加」。签名标识和更长的边界说明在设置里。
 
 ### 这一版做什么
 
@@ -333,9 +351,9 @@ xcodegen generate
 5. 在语音条上点麦克风。
    - 演示打开，或完全访问未开：出现例句，标题会标明这是示例。等待过程中再点一次可以取消。
    - 演示关闭且完全访问已开：直接说话。再点一次会结束并插入识别结果，停顿之后也会结束。权限被拒绝、设备端模型不可用、音频会话失败时，输入框都不会被修改，语音条会说明原因。
-6. 没有文字时，**润色**、**更短**、**正式** 只显示空状态。有选区时替换选区。否则，若刚听写的文字还在光标前，就替换那一段；再否则替换光标前大约 160 个字。演示模式不会把这些按钮换成带标记的例句。
+6. 没有文字时，**润色**、**更短**、**正式** 是灰色的，点不了。有选区时替换选区。否则，若刚听写的文字还在光标前，就替换那一段；再否则替换光标前大约 160 个字。成功或失败会短暂提示，打字不被锁住。若文字已经变了，就不会替换。演示模式不会把这些按钮换成带标记的例句。
 
-`RequestsOpenAccess` 为 `true` 时，设置里才会出现「允许完全访问」。开关关闭时，字母键仍然可以打字。在打开之前，语音条会写明自己正在用内置演示，没有读取主 App 的设置。
+`RequestsOpenAccess` 为 `true` 时，设置里才会出现「允许完全访问」。开关关闭时，字母键仍然可以打字。在打开之前，语音条会写明完全访问未开，点一下只插入示例，不会录音。
 
 普通打字不需要网络。这一版不会连接自己的服务器。
 

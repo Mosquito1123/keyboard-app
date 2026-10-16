@@ -11,8 +11,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.4.0"
-    CURRENT_PROJECT_VERSION: "4"
+    MARKETING_VERSION: "0.5.0"
+    CURRENT_PROJECT_VERSION: "5"
     # NO signs without an App Group so a free Personal Team can install.
     # Set to YES only after group.com.mosquito1123.keyboardapp is enabled,
     # and point each target at the entitlements file that contains the group.
